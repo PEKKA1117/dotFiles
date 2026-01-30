@@ -40,7 +40,7 @@ dotFiles/
 
 Primary window manager with modular configuration:
 - `config` - Main entry point, sources variables and config.d files
-- `variables` - Environment variables (terminal=foot, browser, editor, menu)
+- `variables` - Environment variables (terminal=footclient, browser, editor, menu)
 - `config.d/keymap` - Keybindings for launchers, screenshots, resizing
 - `config.d/workspace` - 10 workspaces bound to dual monitors
 - `config.d/output` - Display setup (DP-3: 2560x1440, HDMI-A-1: 1920x1080)
@@ -50,8 +50,9 @@ Primary window manager with modular configuration:
 **Key Variables:**
 ```bash
 $mod = Mod4 (Super/Win key)
-$term = foot
-$menu = fuzzel
+$term = footclient
+$menu = nwg-drawer
+$launcher = wofi --show drun
 ```
 
 ### Neovim (Editor)
@@ -66,6 +67,9 @@ Lua-based configuration with lazy.nvim plugin manager:
   - `treesitter.lua` - Syntax highlighting (13 languages)
   - `none-ls.lua` - Formatters (stylua, clang-format, ESLint)
   - `claude-code.lua` - Claude Code AI integration
+  - `lua-line.lua` - Status line (Lualine with palenight theme)
+  - `mdRender.lua` - Markdown rendering
+  - `toykonight.lua` - Tokyo Night theme configuration (note: filename has typo)
 
 ### Waybar (Status Bar)
 **Location:** `waybar/`
@@ -108,7 +112,7 @@ Border active: #565f89
 ### Keybindings (Sway)
 Common patterns across the configuration:
 - `$mod+Return` - Terminal
-- `$mod+d` - Application launcher (fuzzel)
+- `$mod+d` - Application launcher (nwg-drawer)
 - `$mod+Shift+q` - Close window
 - `$mod+h/j/k/l` - Vim-style focus navigation
 - `$mod+Shift+h/j/k/l` - Move windows
@@ -172,8 +176,9 @@ Common patterns across the configuration:
 - Secondary: HDMI-A-1 @ 1920x1080
 
 **Workspace Distribution:**
-- Workspaces 1-5: DP-3 (primary)
-- Workspaces 6-10: HDMI-A-1 (secondary)
+- DP-3 (primary): Workspaces 1, 3, 5
+- HDMI-A-1 (secondary): Workspaces 2, 4, 8, 9, 10
+- Workspaces 6, 7: No explicit output assignment (default behavior)
 
 ## Guidelines for AI Assistants
 

@@ -46,7 +46,7 @@ This repository contains my personal dotfiles for a cohesive, developer-focused 
 | Application | Purpose |
 |-------------|---------|
 | Foot | GPU-accelerated terminal emulator |
-| Fuzzel | Fast application launcher |
+| nwg-drawer | Application drawer/launcher |
 | Mako | Notification daemon |
 | Yazi | Terminal file manager |
 | Swayr | Window switcher |
@@ -142,9 +142,12 @@ dotFiles/
 │       └── plugins/
 │           ├── claude-code.lua
 │           ├── lsp.lua
+│           ├── lua-line.lua
+│           ├── mdRender.lua
 │           ├── neo-tree.lua
+│           ├── none-ls.lua
 │           ├── telescope.lua
-│           ├── tokyonight.lua
+│           ├── toykonight.lua
 │           └── treesitter.lua
 ├── sway/               # Window manager
 │   ├── config
@@ -183,7 +186,7 @@ dotFiles/
 | Keybinding | Action |
 |------------|--------|
 | `$mod + Return` | Open terminal (Foot) |
-| `$mod + d` | Application launcher (Fuzzel) |
+| `$mod + d` | Application launcher (nwg-drawer) |
 | `$mod + Shift + q` | Close focused window |
 | `$mod + Shift + e` | Exit Sway |
 | `$mod + Shift + c` | Reload Sway config |
@@ -231,8 +234,9 @@ Tokyo Night with custom purple accent:
 
 This configuration is optimized for a dual-monitor setup:
 
-- **Primary (DP-3):** 2560x1440 - Workspaces 1-5
-- **Secondary (HDMI-A-1):** 1920x1080 - Workspaces 6-10
+- **Primary (DP-3):** 2560x1440 - Workspaces 1, 3, 5
+- **Secondary (HDMI-A-1):** 1920x1080 - Workspaces 2, 4, 8, 9, 10
+- Workspaces 6, 7 have no explicit output assignment
 
 Modify `sway/config.d/output` and `sway/config.d/workspace` for your setup.
 
@@ -245,7 +249,7 @@ Modify `sway/config.d/output` and `sway/config.d/workspace` for your setup.
    - `foot/foot.ini`
    - `fuzzel/fuzzel.ini`
    - `mako/config`
-   - `nvim/lua/plugins/tokyonight.lua`
+   - `nvim/lua/plugins/toykonight.lua`
 
 #### Add Neovim Plugins
 1. Create `nvim/lua/plugins/your-plugin.lua`
@@ -337,7 +341,7 @@ This project is open source. Feel free to use, modify, and distribute.
 | 應用程式 | 用途 |
 |----------|------|
 | Foot | GPU 加速終端機模擬器 |
-| Fuzzel | 快速應用程式啟動器 |
+| nwg-drawer | 應用程式啟動器 |
 | Mako | 通知守護程式 |
 | Yazi | 終端機檔案管理器 |
 | Swayr | 視窗切換器 |
@@ -433,9 +437,12 @@ dotFiles/
 │       └── plugins/
 │           ├── claude-code.lua
 │           ├── lsp.lua
+│           ├── lua-line.lua
+│           ├── mdRender.lua
 │           ├── neo-tree.lua
+│           ├── none-ls.lua
 │           ├── telescope.lua
-│           ├── tokyonight.lua
+│           ├── toykonight.lua
 │           └── treesitter.lua
 ├── sway/               # 視窗管理器
 │   ├── config
@@ -474,7 +481,7 @@ dotFiles/
 | 快捷鍵 | 動作 |
 |--------|------|
 | `$mod + Return` | 開啟終端機（Foot）|
-| `$mod + d` | 應用程式啟動器（Fuzzel）|
+| `$mod + d` | 應用程式啟動器（nwg-drawer）|
 | `$mod + Shift + q` | 關閉目前視窗 |
 | `$mod + Shift + e` | 離開 Sway |
 | `$mod + Shift + c` | 重新載入 Sway 設定 |
@@ -522,8 +529,9 @@ Tokyo Night 搭配自訂紫色強調色：
 
 此設定針對雙螢幕環境最佳化：
 
-- **主螢幕（DP-3）：** 2560x1440 - 工作區 1-5
-- **副螢幕（HDMI-A-1）：** 1920x1080 - 工作區 6-10
+- **主螢幕（DP-3）：** 2560x1440 - 工作區 1、3、5
+- **副螢幕（HDMI-A-1）：** 1920x1080 - 工作區 2、4、8、9、10
+- 工作區 6、7 無明確輸出指定
 
 請根據您的設備修改 `sway/config.d/output` 和 `sway/config.d/workspace`。
 
@@ -536,7 +544,7 @@ Tokyo Night 搭配自訂紫色強調色：
    - `foot/foot.ini`
    - `fuzzel/fuzzel.ini`
    - `mako/config`
-   - `nvim/lua/plugins/tokyonight.lua`
+   - `nvim/lua/plugins/toykonight.lua`
 
 #### 新增 Neovim 外掛
 1. 建立 `nvim/lua/plugins/your-plugin.lua`
