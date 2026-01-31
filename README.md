@@ -1,4 +1,6 @@
 # dotFiles
+## WARNING: This doc is a Claude & Copliot crap. Read the dir tree will be faster and more correct
+
 
 A comprehensive Wayland-based Linux desktop environment configuration for Arch-based systems (Garuda Linux).
 
