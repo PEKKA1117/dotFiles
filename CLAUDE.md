@@ -52,7 +52,7 @@ Primary window manager with modular configuration:
 $mod = Mod4 (Super/Win key)
 $term = footclient
 $menu = nwg-drawer
-$launcher = wofi --show drun
+$launcher = pkill wofi || wofi --show drun --allow-markup --allow-images
 ```
 
 ### Neovim (Editor)
