@@ -186,7 +186,7 @@ dotFiles/
 | Keybinding | Action |
 |------------|--------|
 | `$mod + Return` | Open terminal (Foot) |
-| `$mod + d` | Application launcher (nwg-drawer) |
+| `$mod + d` | Application launcher (wofi) |
 | `$mod + Shift + q` | Close focused window |
 | `$mod + Shift + e` | Exit Sway |
 | `$mod + Shift + c` | Reload Sway config |
@@ -481,7 +481,7 @@ dotFiles/
 | 快捷鍵 | 動作 |
 |--------|------|
 | `$mod + Return` | 開啟終端機（Foot）|
-| `$mod + d` | 應用程式啟動器（nwg-drawer）|
+| `$mod + d` | 應用程式啟動器（wofi）|
 | `$mod + Shift + q` | 關閉目前視窗 |
 | `$mod + Shift + e` | 離開 Sway |
 | `$mod + Shift + c` | 重新載入 Sway 設定 |
