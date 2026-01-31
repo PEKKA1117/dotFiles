@@ -54,7 +54,7 @@ exec proton-mail
 exec spotify
 
 # Wallpaper Engine
-#exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root HDMI-A-1  --playlist "Mercy<3"'
-#exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root DP-3  --playlist "Mercy<3"'
+exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root HDMI-A-1  --playlist "Main"'
+exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root DP-3  --playlist "Main"'
 
 exec discord --enable-features=WebRTCPipeWireCapturer --enable-wayland-ime
