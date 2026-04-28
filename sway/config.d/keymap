@@ -58,3 +58,13 @@ bindsym $mod+Shift+$right move right
 # clipboard history
 bindsym $mod+v exec $open_clipboard
 
+
+bindsym $mod+F1 exec ~/.local/bin/switch-monitor-mode.sh 4k
+bindsym $mod+F2 exec ~/.local/bin/switch-monitor-mode.sh highrefresh
+
+# Monitor toggle controls
+bindsym $mod+F5 output DP-3 disable
+bindsym $mod+F6 output DP-3 enable
+bindsym $mod+F7 output HDMI-A-1 disable
+bindsym $mod+F8 output HDMI-A-1 enable
+
