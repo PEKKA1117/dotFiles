@@ -1,4 +1,5 @@
 ### Output configuration
-output DP-3 res 2560x1440 pos 0,0
-output HDMI-A-1 res 1920x1080 pos 2560,360
+output DP-3 res 3840 2160 pos 0,0
+#output HDMI-A-1 res 1920x1080 pos 2560,360
+output HDMI-A-1 res 1920x1080 pos 3840,0
 
