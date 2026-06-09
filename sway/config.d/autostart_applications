@@ -10,9 +10,9 @@ exec hash dbus-update-activation-environment 2>/dev/null && \
 
 # Idle configuration
 # Idle configuration: lock after 5min, screen off after 10min
-exec swayidle -w \
-    timeout 600 'swaymsg "output * dpms off"' \
-    resume 'swaymsg "output * dpms on"'
+#exec swayidle -w \
+#    timeout 600 'swaymsg "output * dpms off"' \
+#    resume 'swaymsg "output * dpms on"'
 
 # Desktop notifications
 exec mako
@@ -54,7 +54,7 @@ exec proton-mail
 exec spotify
 
 # Wallpaper Engine
-exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root HDMI-A-1  --playlist "Main"'
-exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root DP-3  --playlist "Main"'
+#exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root HDMI-A-1  --playlist "Main"'
+#exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root DP-3  --playlist "Main"'
 
 exec discord --enable-features=WebRTCPipeWireCapturer --enable-wayland-ime
