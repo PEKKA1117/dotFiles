@@ -13,7 +13,10 @@ set $editor nvim
 set $menu nwg-drawer
 set $fileManager thunar
 set $launcher pkill wofi || wofi --show drun --allow-markup --allow-images
-set $open_clipboard pkill wofi ||  cliphist list | wofi -S dmenu | cliphist decode | wl-copy 
+set $open_clipboard pkill wofi ||  cliphist list | wofi -S dmenu | cliphist decode | wl-copy
+set $steam steam
+set $spotify spotify
+set $discord discord 
 
 # workspaces
 set $ws1 "1"
