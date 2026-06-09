@@ -59,6 +59,8 @@ bindsym $mod+Shift+$right move right
 bindsym $mod+v exec $open_clipboard
 
 
+bindsym $mod+F12 exec sh -c 'pkill -9 Discord; sleep 1; discord'
+
 bindsym $mod+F1 exec ~/.local/bin/switch-monitor-mode.sh 4k
 bindsym $mod+F2 exec ~/.local/bin/switch-monitor-mode.sh highrefresh
 
