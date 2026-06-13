@@ -18,7 +18,7 @@ exec hash dbus-update-activation-environment 2>/dev/null && \
 exec mako
 
 # Start foot server
-exec_always foot --server
+exec foot --server
 
 # Autotiling
 exec autotiling
@@ -45,13 +45,11 @@ exec python3 ~/.config/sway/scripts/swayfader.py
 # a2ln notification
 exec a2ln
 
-exec steam
-
-
 exec protonvpn-app
-exec proton-mail
 
 exec spotify
+
+exec /home/df/.local/bin/steam-warp
 
 # Wallpaper Engine
 #exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root HDMI-A-1  --playlist "Main"'
