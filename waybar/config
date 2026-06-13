@@ -43,7 +43,7 @@
   // Configuration - modules-center
 
   "modules-center": [
-    "custom/claude-usage",
+//    "custom/claude-usage",
     "clock",
     "network",
     "custom/playerctl"

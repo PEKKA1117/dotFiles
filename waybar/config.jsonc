@@ -3,4 +3,22 @@
     "custom/claude-usage",
     "custom/codex-usage"
   ],
-
+  "custom/claude-usage": {
+    "exec": "/usr/bin/claude-usage --waybar --browser chromium",
+    "return-type": "json",
+    "interval": 120,
+    "format": "{}",
+    "tooltip": true,
+    "on-click": "pkill -RTMIN+8 waybar",
+    "signal": 8
+  },
+  "custom/codex-usage": {
+    "exec": "/usr/bin/codex-usage --waybar --browser chromium",
+    "return-type": "json",
+    "interval": 120,
+    "format": "{}",
+    "tooltip": true,
+    "on-click": "pkill -RTMIN+9 waybar",
+    "signal": 9
+  }
+}
