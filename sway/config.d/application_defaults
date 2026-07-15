@@ -44,15 +44,17 @@ for_window [app_id="Chromium"] inhibit_idle fullscreen
 
 # Move App to workspaces
 for_window [class="discord"] move --no-auto-back-and-forth container to workspace  $ws9 
+for_window [app_id="vesktop"] move --no-auto-back-and-forth container to workspace  $ws9 
 
 for_window [class="steam"]  move --no-auto-back-and-forth container to workspace  $ws2
-for_window [class="Steam"]  move --no-auto-back-and-forth container to workspace  $ws2 
+for_window [class="Steam" floating] no_focus
 
 
 for_window [app_id="gamescope"] move --no-auto-back-and-forth container to workspace $ws3
+for_window [title="鬥陣特攻"] move --no-auto-back-and-forth container to workspace $ws3
 for_window [class="steam_app_[0-9]+"] move --no-auto-back-and-forth container to workspace $ws3
 for_window [class="steam_app_default"] move --no-auto-back-and-forth container to workspace $ws5
-for_window [app_id="overwatch\.exe"] move --no-auto-back-and-forth container to workspace $ws3   
+for_window [class="overwatch\.exe"] move --no-auto-back-and-forth container to workspace $ws3
 
 # IDEs
 # When running in native wayland mode
