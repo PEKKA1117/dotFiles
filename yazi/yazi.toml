@@ -1,3 +1,13 @@
 [mgr]
 show_hidden = true
 
+[opener]
+image = [
+	{ run = 'satty -f "$@"', orphan = true, desc = "Open with satty" },
+]
+
+[open]
+prepend_rules = [
+	{ mime = "image/*", use = "image" },
+]
+
