@@ -3,6 +3,10 @@
 ### Appearance
 # window corner radius in px
 corner_radius 4
+# 暫時停用 smart_corner_radius:swayfx 0.5.3 的 container_has_corner_radius()
+# 在全螢幕工作區開新視窗時會對 NULL workspace 解參照導致崩潰(上游 PR #483,
+# 0.5.4 發布後可移除此行)
+smart_corner_radius off
 
 # Window background blur
 blur enable
