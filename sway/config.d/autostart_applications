@@ -8,6 +8,11 @@ exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
 exec hash dbus-update-activation-environment 2>/dev/null && \
     dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
 
+# Activate graphical-session.target so xdg-desktop-portal (and GTK4/libadwaita
+# apps like pavucontrol) can read color-scheme via the portal instead of
+# falling back to light theme.
+exec systemctl --user start sway-session.target
+
 # Idle configuration
 # Idle configuration: lock after 5min, screen off after 10min
 #exec swayidle -w \
@@ -47,12 +52,13 @@ exec a2ln
 
 exec protonvpn-app
 
-exec spotify
+# Gate network apps behind ProtonVPN: launch only after the VPN is connected
+exec ~/.config/sway/scripts/launch_after_vpn.sh spotify
 
-exec /home/df/.local/bin/steam-warp
+exec ~/.config/sway/scripts/launch_after_vpn.sh steam
 
 # Wallpaper Engine
 #exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root HDMI-A-1  --playlist "Main"'
 #exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root DP-3  --playlist "Main"'
 
-exec discord --enable-features=WebRTCPipeWireCapturer --enable-wayland-ime
+exec ~/.config/sway/scripts/launch_after_vpn.sh /usr/bin/vesktop --ozone-platform-hint=auto --enable-blink-features=MiddleClickAutoscroll --enable-features=WebRTCPipeWireCapturer --enable-wayland-ime
