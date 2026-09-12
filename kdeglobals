@@ -141,7 +141,7 @@ ForegroundPositive=125,207,255
 ForegroundVisited=187,154,247
 
 [Icons]
-Theme=Tela-circle-nord-dark
+Theme=Tela-circle-purple-dark
 
 [KDE]
 ColorScheme=TokyoNight
