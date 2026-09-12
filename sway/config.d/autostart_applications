@@ -8,6 +8,13 @@ exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
 exec hash dbus-update-activation-environment 2>/dev/null && \
     dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
 
+# Tokyo Night: push the Qt platform theme vars into the systemd user manager and
+# dbus, so dbus-activated and systemd-launched Qt apps pick up qt6ct + Kvantum.
+# sway itself is started by greetd via /usr/local/bin/start-sway, which is where
+# these must also be exported for apps launched directly from a sway binding.
+exec env QT_QPA_PLATFORMTHEME=qt6ct QT_STYLE_OVERRIDE=kvantum-dark \
+    dbus-update-activation-environment --systemd QT_QPA_PLATFORMTHEME QT_STYLE_OVERRIDE
+
 # Activate graphical-session.target so xdg-desktop-portal (and GTK4/libadwaita
 # apps like pavucontrol) can read color-scheme via the portal instead of
 # falling back to light theme.

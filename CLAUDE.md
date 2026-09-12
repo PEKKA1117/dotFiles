@@ -109,6 +109,63 @@ Selection:     #33467c
 Border active: #565f89
 ```
 
+**GTK / Qt toolkit theming** — both toolkits are themed from config files only, with
+no third-party theme packages installed. Keep every colour below in sync with
+`foot/foot.ini` and `mako/config` when changing the palette.
+
+| Toolkit | Base | Where the colours live |
+|---------|------|------------------------|
+| GTK 3 | `Adwaita-dark` | `gtk-3.0/tokyonight-adwaita.css` (generated) + `gtk-3.0/gtk.css` |
+| GTK 4, plain | GTK's built-in `Default` | `gtk-4.0/tokyonight-default.css` (generated) + `gtk-4.0/gtk.css` |
+| GTK 4, libadwaita | stock libadwaita | `gtk-4.0/gtk.css` — libadwaita derives its design system from these named colours |
+| Qt 6 | `qt6ct` + Kvantum | `qt6ct/qt6ct.conf`, palette in `qt6ct/colors/TokyoNight.conf` |
+| Qt 5 | Kvantum directly (`qt5ct` not installed) | `qt5ct/qt5ct.conf`, palette in `qt5ct/colors/TokyoNight.conf` |
+| Kvantum widget style | `KvArcDark`, recoloured | `Kvantum/KvTokyoNight/` — `.svg` + `.kvconfig`, selected by `Kvantum/kvantum.kvconfig` |
+| KDE apps (Dolphin, Ark) | — | `kdeglobals` `[Colors:*]` sections |
+
+Icon theme is `Tela-circle-nord-dark` everywhere (GTK settings.ini, gsettings, qt5ct/qt6ct, kdeglobals).
+
+`QT_QPA_PLATFORMTHEME=qt6ct` and `QT_STYLE_OVERRIDE=kvantum-dark` must be set or
+the Qt config is silently ignored. They are declared in three places because the
+session is started by greetd, not by a login shell:
+- `environment.d/60-theme.conf` — systemd user units (incl. `foot-server`)
+- `sway/config.d/autostart_applications` — pushed into systemd + dbus at sway start
+- `/usr/local/bin/start-sway` — **outside this repo**, root-owned; needed for apps
+  launched directly from a sway binding
+
+GTK's own stylesheets bake every colour in at build time, so `@define-color`
+alone reaches only a fraction of the widgets. `gtk-3.0/recolour-theme.py` reads
+a stock stylesheet, keeps only the colour-bearing declarations, remaps each
+colour, and writes the `tokyonight-*.css` that `gtk.css` imports at user
+priority. Geometry and icon assets still come from the stock theme. Regenerate
+after a gtk3/gtk4 update:
+
+```sh
+cd ~/.config/gtk-3.0
+gresource extract /usr/lib/libgtk-3.so.0 \
+    /org/gtk/libgtk/theme/Adwaita/gtk-contained-dark.css > /tmp/src3.css
+./recolour-theme.py /tmp/src3.css tokyonight-adwaita.css
+gresource extract /usr/lib/libgtk-4.so.1 \
+    /org/gtk/libgtk/theme/Default/Default-dark.css > /tmp/src4.css
+./recolour-theme.py --flatten /tmp/src4.css ../gtk-4.0/tokyonight-default.css
+```
+
+`ANCHORS` in that script pins the colours GTK actually leans on (window
+background, selection, borders, disabled text); everything else falls through to
+a luminance ramp and hue families. `--flatten` drops gradient background-images
+so libadwaita's flat surfaces survive — without it the stock grey gradient
+paints over the recoloured background-color.
+
+Regenerate the Kvantum theme after a `KvArcDark` upstream update with
+`Kvantum/KvTokyoNight/recolour-from-arc.py`, which holds the Arc→Tokyo Night colour
+map; the `[GeneralColors]` block in `KvTokyoNight.kvconfig` is maintained by hand.
+
+Known cosmetic wart: qt6ct's own settings window shows "The application is not
+configured correctly" because `QT_STYLE_OVERRIDE` is set. That variable is what
+themes Qt 5 apps (`limo`, `openrgb`) — there is no qt5ct platform-theme plugin
+installed — and it is set to the same `kvantum-dark` that qt6ct.conf selects, so
+nothing is actually overridden.
+
 ### Keybindings (Sway)
 Common patterns across the configuration:
 - `$mod+Return` - Terminal
