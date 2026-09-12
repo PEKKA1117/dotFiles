@@ -1,0 +1,6 @@
+[Unit]
+Description=Run Python script in venv
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/zsh /home/df/PyCharmMiscProject/job.zsh

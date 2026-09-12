@@ -1,0 +1,15 @@
+[Unit]
+Description=Auto-register Steam games with GameMode (reaper anchor)
+Documentation=file:///home/df/.local/bin/gamemode-autoregister
+
+[Service]
+Type=simple
+ExecStart=/home/df/.local/bin/gamemode-autoregister
+Restart=on-failure
+RestartSec=5
+# 自己就是背景服務,別跟遊戲搶排程
+Nice=19
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

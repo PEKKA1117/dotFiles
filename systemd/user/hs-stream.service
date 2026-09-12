@@ -1,0 +1,7 @@
+[Unit]
+Description=爐石戰記卡牌揭露直播自動啟動
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/home/df/.local/bin/hs-stream.sh

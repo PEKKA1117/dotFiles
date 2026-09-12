@@ -1,0 +1,5 @@
+[Unit]
+Description=今天早上 9 點錄製系統聲音輸出（單次）
+
+[Timer]
+OnCalendar=2026-06-20 09:00:00

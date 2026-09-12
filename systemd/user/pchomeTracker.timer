@@ -1,0 +1,9 @@
+[Unit]
+Description=Run job.service every minute
+
+[Timer]
+OnCalendar=*:0/10
+Unit=pchomeTracker.service
+
+[Install]
+WantedBy=default.target
