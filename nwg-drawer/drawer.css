@@ -1,0 +1,39 @@
+/* Tokyo Night with #8478de accent */
+window {
+    background-color: rgba (26, 27, 38, 0.9);
+    color: #c0caf5;
+    border-radius: 30px
+}
+
+/* search entry */
+entry {
+    box-shadow: 0 0 6px 5px #1a1b26;
+    background-color: rgba (51, 70, 124, 0.5)
+}
+
+button, image {
+    background-color: #24283b;
+    background: none;
+    border: none;
+    margin: 10px
+}
+
+button:hover {
+    background-color: rgba (132, 120, 222, 0.6);
+    box-shadow: 0 0 6px 5px #1a1b26
+}
+
+/* in case you wanted to give category buttons a different look */
+#category-button {
+    margin: 0 0px 0 0px
+}
+
+#pinned-box {
+    padding-bottom: 1px;
+    border-bottom: 1px solid #8478de
+}
+
+#files-box {
+    padding: 1px;
+    border: 1px solid #8478de
+}

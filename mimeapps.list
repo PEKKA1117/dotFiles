@@ -1,0 +1,22 @@
+[Default Applications]
+x-scheme-handler/betterdiscord=discord.desktop
+x-scheme-handler/nxm=vortex-nxm-handler.desktop
+x-scheme-handler/discord=vesktop.desktop
+x-scheme-handler/mpv=mpv-handler.desktop
+x-scheme-handler/mpv-debug=mpv-handler-debug.desktop
+x-scheme-handler/nxm-protocol=vortex-nxm-handler.desktop
+x-scheme-handler/irc=vivaldi-snapshot.desktop
+x-scheme-handler/https=vivaldi-snapshot.desktop
+x-scheme-handler/http=vivaldi-snapshot.desktop
+x-scheme-handler/jetbrains-gateway=jetbrains-gateway.desktop
+inode/directory=/usr/share/applications/thunar.desktop
+x-scheme-handler/jetbrains=jetbrainsd.desktop
+image/avif=swayimg.desktop
+x-scheme-handler/claude=com.anthropic.Claude.desktop
+x-scheme-handler/claude-cli=claude-code-url-handler.desktop
+x-scheme-handler/tidal=sone-handler.desktop
+
+[Added Associations]
+application/x-bat=nvim.desktop;
+image/avif=swayimg.desktop;
+application/zip=xarchiver.desktop;

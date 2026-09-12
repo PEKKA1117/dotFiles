@@ -1,0 +1,2 @@
+# Set terminal for "Open Terminal Here" action in Thunar context menu
+TerminalEmulator=footclient
