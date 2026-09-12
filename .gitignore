@@ -144,6 +144,9 @@ QtProject/
 pavucontrol.ini
 fancontrol-gui
 ktorrentrc
+ktorrent_infowidgetrc
+Arena Tracker/
+gh/config.yml
 calcurse/
 kanban_tui/auth/
 kanban_tui/demo_config.toml
