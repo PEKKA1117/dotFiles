@@ -123,7 +123,7 @@ no third-party theme packages installed. Keep every colour below in sync with
 | Kvantum widget style | `KvArcDark`, recoloured | `Kvantum/KvTokyoNight/` — `.svg` + `.kvconfig`, selected by `Kvantum/kvantum.kvconfig` |
 | KDE apps (Dolphin, Ark) | — | `kdeglobals` `[Colors:*]` sections |
 
-Icon theme is `Tela-circle-nord-dark` everywhere (GTK settings.ini, gsettings, qt5ct/qt6ct, kdeglobals).
+Icon theme is `Tela-circle-purple-dark` everywhere (GTK settings.ini, gsettings, qt5ct/qt6ct, kdeglobals).
 
 `QT_QPA_PLATFORMTHEME=qt6ct` and `QT_STYLE_OVERRIDE=kvantum-dark` must be set or
 the Qt config is silently ignored. They are declared in three places because the
