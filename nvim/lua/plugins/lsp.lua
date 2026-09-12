@@ -21,10 +21,23 @@ return {
   {
     "neovim/nvim-lspconfig",
     config = function()
-      local lspconfig = require("lspconfig")
-      lspconfig.lua_ls.setup({})
-      lspconfig.vimls.setup({})
-      lspconfig.clangd.setup({})
+      -- nvim-lspconfig ships the per-server configs; enable them with the native
+      -- API instead of the deprecated `require("lspconfig")` framework.
+      -- See :help lspconfig-nvim-0.11
+      local servers = { "lua_ls", "vimls", "clangd" }
+
+      -- The old framework fell back to the file's own directory when no project
+      -- marker was found; keep that so single files still get a server.
+      for _, name in ipairs(servers) do
+        local markers = vim.lsp.config[name].root_markers
+        vim.lsp.config(name, {
+          root_dir = function(bufnr, on_dir)
+            on_dir(vim.fs.root(bufnr, markers) or vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr)))
+          end,
+        })
+      end
+
+      vim.lsp.enable(servers)
 
       -- Only set keymap when LSP is attached
       vim.api.nvim_create_autocmd("LspAttach", {
