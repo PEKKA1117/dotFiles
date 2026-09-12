@@ -1,0 +1,8 @@
+[
+    {
+        "game": "FINAL FANTASY VII REMAKE",
+        "dir": "/mnt/SN570/steamapps/common/FINAL FANTASY VII REMAKE/End/Binaries/Win64",
+        "hlsl_compiler": true,
+        "api_dll": "dxgi.dll"
+    }
+]

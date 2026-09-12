@@ -1,0 +1,9 @@
+{
+  "default": {
+    "sensitivity1": 6400,
+    "sensitivity2": 6400,
+    "polling_rate": 1000,
+    "logo_color": "8478de",
+    "wheel_color": "8478de"
+  }
+}
