@@ -1,0 +1,13 @@
+[Unit]
+Description=爐石戰記卡牌揭露計時器
+
+[Timer]
+OnCalendar=2026-06-10 05:03:00
+OnCalendar=2026-06-12 05:03:00
+OnCalendar=2026-06-17 05:03:00
+OnCalendar=2026-06-19 05:03:00
+OnCalendar=2026-06-24 05:03:00
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

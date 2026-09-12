@@ -1,0 +1,17 @@
+[Unit]
+Description=錄製系統聲音輸出（2小時）
+After=pipewire.service pipewire-pulse.service
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -c '\
+  mkdir -p %h/recordings && \
+  pw-record \
+    --target alsa_output.usb-SteelSeries_Arctis_Nova_7_Gen_2-00.analog-stereo.monitor \
+    --format s16 --rate 48000 --channels 2 - | \
+  ffmpeg \
+    -f s16le -ar 48000 -ac 2 -i - \
+    -t 5 \
+    -c:a libmp3lame -q:a 4 \
+    %h/recordings/output_$(date +%%Y%%m%%d_%%H%%M%%S).mp3'
+Restart=no
