@@ -1,0 +1,35 @@
+[board]
+theme = "textual-ansi"
+columns_in_view = 3
+auto_refresh_interval = 0
+custom_themes = []
+
+[board.theme_colors]
+primary = ""
+success = ""
+warning = ""
+error = ""
+
+[task]
+default_color = "#004578"
+always_expanded = false
+metadata_always_expanded = true
+movement_mode = "adjacent"
+append_mode = "top"
+
+[backend]
+mode = "sqlite"
+
+[backend.sqlite_settings]
+database_path = "/home/df/.local/share/kanban_tui/kanban_tui.db"
+active_board_id = 1
+
+[backend.jira_settings]
+base_url = ""
+auth_file_path = "/home/df/.config/kanban_tui/auth/authentication.toml"
+jqls = []
+active_jql = 1
+
+[backend.claude_settings]
+tasks_base_path = "~/.claude/tasks"
+active_session_id = ""
