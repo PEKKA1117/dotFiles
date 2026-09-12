@@ -1,0 +1,15 @@
+os:
+  # nvim preset also wires up openDirInEditor, which oil.nvim hijacks
+  editPreset: 'nvim'
+
+customCommands:
+  - key: 'o'
+    context: 'files'
+    description: 'Open in oil.nvim'
+    command: 'p={{.SelectedPath | quote}}; [ -d "$p" ] || p="$(dirname -- "$p")"; nvim -- "$p"'
+    output: terminal
+  - key: 'o'
+    context: 'commitFiles'
+    description: 'Open in oil.nvim'
+    command: 'p={{.SelectedCommitFilePath | quote}}; [ -d "$p" ] || p="$(dirname -- "$p")"; nvim -- "$p"'
+    output: terminal
