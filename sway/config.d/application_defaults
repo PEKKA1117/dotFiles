@@ -64,9 +64,13 @@ for_window [app_id="jetbrains-.*"] move --no-auto-back-and-forth container to wo
 for_window [class="jetbrains-.*"] move --no-auto-back-and-forth container to workspace  $ws5
 
 for_window [app_id="Proton Mail"] move --no-auto-back-and-forth container to workspace $ws8
-for_window [app_id="spotify"] move --no-auto-back-and-forth container to workspace  $ws10
-for_window [class="Spotify"] move --no-auto-back-and-forth container to workspace  $ws10
+
+for_window [app_id="sone"] move --no-auto-back-and-forth container to workspace $ws10
 
 # Hearthstone + Arena Tracker side by side
 for_window [class="ArenaTracker"] move --no-auto-back-and-forth container to workspace $ws3
 for_window [class="explorer.exe"] move --no-auto-back-and-forth container to workspace $ws3
+
+
+for_window [class="MateEngineX.x86_64"] \
+    floating enable, sticky enable, border none

@@ -53,7 +53,7 @@ exec a2ln
 exec protonvpn-app
 
 # Gate network apps behind ProtonVPN: launch only after the VPN is connected
-exec ~/.config/sway/scripts/launch_after_vpn.sh spotify
+exec ~/.config/sway/scripts/launch_after_vpn.sh suno
 
 exec ~/.config/sway/scripts/launch_after_vpn.sh steam
 
