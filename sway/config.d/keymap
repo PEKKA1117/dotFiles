@@ -128,9 +128,9 @@ bindsym {
 #
 bindsym {
     # Volume
-    XF86AudioRaiseVolume exec pamixer -ui 2
-    XF86AudioLowerVolume exec pamixer -ud 2
-    XF86AudioMute exec pamixer --toggle-mute
+    XF86AudioRaiseVolume exec ~/.config/sway/scripts/volume_osd.sh up
+    XF86AudioLowerVolume exec ~/.config/sway/scripts/volume_osd.sh down
+    XF86AudioMute exec ~/.config/sway/scripts/volume_osd.sh mute
 
     # Player
     XF86AudioPlay exec playerctl play-pause
