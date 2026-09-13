@@ -49,3 +49,29 @@ background-color=#1a1b26
 text-color=#f7768e
 border-color=#f7768e
 default-timeout=0
+
+# ── 音量 OSD ────────────────────────────────────────────────
+# 由 ~/.config/sway/scripts/volume_osd.sh 送出。
+# icon-path 必填:mako 不讀 GTK 圖示主題,預設只找 hicolor 與 pixmaps,
+# 兩邊都沒有 audio-volume-*;而 Tela-circle 全是 SVG,本機沒裝 gdk-pixbuf
+# 的 SVG loader,mako 讀不了 —— 所以指向 AdwaitaLegacy 的 PNG。
+[app-name=volume-osd]
+output=DP-3
+anchor=bottom-center
+history=0
+format=<b>%s</b>
+font=JetBrainsMono 18
+width=460
+height=110
+padding=18
+outer-margin=0,0,100
+border-radius=12
+icon-path=/usr/share/icons/AdwaitaLegacy
+max-icon-size=48
+
+# 遊戲中(Steam reaper 存在)改送副螢幕。
+# 只覆寫 output/anchor,其餘樣式沿用上面那條 criteria——後定義者勝。
+# 理由:全螢幕遊戲會蓋掉 layer=top,OSD 留在 DP-3 等於看不見。
+[app-name=volume-osd category=game]
+output=HDMI-A-1
+anchor=bottom-center
