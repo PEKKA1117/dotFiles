@@ -1,3 +1,7 @@
+# ── 全域設定(必須在任何 [criteria] 之前)─────────────────────
+max-history=100
+
+# ── 外觀 ────────────────────────────────────────────────────
 anchor=top-left
 font=JetBrainsMono 12
 background-color=#1a1b26
@@ -9,18 +13,39 @@ padding=10
 border-size=2
 border-color=#8478de
 border-radius=5
-default-timeout=10000
-group-by=summary
-max-visible=-1
-output=HDMI-A-1
 progress-color=#8478de
+output=HDMI-A-1
 
+# ── 行為 ────────────────────────────────────────────────────
+default-timeout=10000
+group-by=app-name,summary
+max-visible=5
+
+# ── 群組摺疊 ────────────────────────────────────────────────
+# mako 內建 [grouped] 已把同組通知設為 invisible、只留 group-index=0,
+# 這裡只改版面字串,讓第一則顯示「(N)」計數。
+[grouped]
+format=(%g) <b>%s</b>\n%b
+
+# 超過 max-visible 時顯示的佔位符
+[hidden]
+format=<i>還有 %h 則通知</i>
+
+# ── 過濾:Vivaldi 的 Proton VPN 網頁推播只閃一下 ─────────────
+# 注意:所有網頁推播的 app-name 都是 Vivaldi,所以必須用 summary~ 正規式
+# 才不會把整個瀏覽器的通知一起降噪。
+[app-name=Vivaldi summary~="^Proton VPN"]
+default-timeout=1500
+ignore-timeout=1
+
+# ── urgency 樣式 ────────────────────────────────────────────
 [urgency=low]
 background-color=#1a1b26
 text-color=#565f89
 border-color=#414868
 
-[urgency=high]
+[urgency=critical]
 background-color=#1a1b26
 text-color=#f7768e
 border-color=#f7768e
+default-timeout=0
