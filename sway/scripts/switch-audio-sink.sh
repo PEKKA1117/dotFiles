@@ -87,8 +87,8 @@ switch_usb() {
 
 case "$1" in
     c20)
-        # C20 要先把喇叭本身切到光纖輸入,這步會有網路延遲,先發通知讓人知道在等
-        osd "切換到 C20…(喇叭換源中)"
+        # C20 要先把喇叭本身切到光纖輸入。這是網路呼叫,喇叭離線時由
+        # timeout 收場,再由下面那則通知說明失敗原因。
         if ! timeout 5 "$AUDIOPRO" source optical >/dev/null 2>&1; then
             osd "C20 無回應(喇叭離線?)" audio-volume-muted
             exit 1
