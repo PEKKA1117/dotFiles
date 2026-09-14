@@ -1,5 +1,8 @@
 ### Output configuration
-output DP-3 res 3840 2160 pos 0,0 adaptive_sync on
+# VRR 預設關閉：面板 VRR 下限 48Hz，靜態桌面時提交率遠低於下限，
+# 刷新率在下限附近跳動導致 IPS 面板 gamma 飄移 → 肉眼可見的亮度閃爍。
+# 需要遊戲用 VRR 時按 $mod+F9 切換（見 config.d/keymap）。
+output DP-3 res 3840 2160 pos 0,0 adaptive_sync off
 #output HDMI-A-1 res 1920x1080 pos 2560,360
 output HDMI-A-1 res 1920x1080 pos 3840,0
 
