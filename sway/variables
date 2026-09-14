@@ -30,3 +30,10 @@ set $ws8 "8"
 set $ws9 "9"
 set $ws10 "10"
 
+# 音效輸出裝置（綁 $mod+F3 / F4 / F10，見 config.d/keymap）
+# 這裡只決定「哪個鍵對哪台裝置」，要換順序改這三行即可；
+# 裝置實作細節（C20 的 audiopro 換源流程、USB 熱插拔比對）在
+# ~/.config/sway/scripts/switch-audio-sink.sh
+set $audioDevice_1 c20
+set $audioDevice_2 arctis
+set $audioDevice_3 moonriver
