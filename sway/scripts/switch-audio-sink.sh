@@ -12,6 +12,12 @@ C20_SINK="alsa_output.pci-0000_00_1f.3.iec958-stereo"
 ARCTIS_PATTERN="arctis"
 MOONRIVER_PATTERN="moonriver"
 
+# 輸入(麥克風)對應:切輸出時順便把預設輸入換過去。
+# C20 走光纖沒有麥克風,所以配桌上的 Snowball;Nova 7 用自己的耳機麥。
+# Moonriver 3 是純 DAC,不動輸入。
+SNOWBALL_PATTERN="snowball"
+NOVA7_MIC_PATTERN="arctis_nova_7"
+
 # sway 的 exec 不會 source .zshrc,拿不到 ~/.cargo/bin,必須用絕對路徑
 AUDIOPRO="$HOME/.cargo/bin/audiopro"
 
@@ -37,6 +43,41 @@ osd() {
 find_sink() {
     pactl list short sinks 2>/dev/null \
         | awk -v pat="$1" 'tolower($2) ~ tolower(pat) { print $2; exit }'
+}
+
+# 依關鍵字找出當下在線的輸入來源。
+# 必須排除 .monitor:那是輸出裝置的回送,名字同樣含關鍵字,
+# 不濾掉的話 arctis 會先命中 sink 的 monitor 而不是耳機麥。
+find_source() {
+    pactl list short sources 2>/dev/null \
+        | awk -v pat="$1" 'tolower($2) ~ tolower(pat) && $2 !~ /\.monitor$/ { print $2; exit }'
+}
+
+# 切換預設輸入來源,並把既有錄音串流一起搬過去。
+# 找不到裝置只回傳失敗、不中斷流程:輸出那邊已經切好了,
+# 不該因為麥克風沒插就讓整次切換算失敗。
+switch_source() {
+    local pattern="$1" label="$2" source id
+    source=$(find_source "$pattern")
+    [[ -z "$source" ]] && { echo "找不到輸入裝置: $label" >&2; return 1; }
+
+    pactl set-default-source "$source" 2>/dev/null || return 1
+
+    # 同 sink:set-default-source 只管之後開的串流,正在錄的要逐一搬。
+    while read -r id _; do
+        [[ -n "$id" ]] && pactl move-source-output "$id" "$source" 2>/dev/null
+    done < <(pactl list short source-outputs 2>/dev/null)
+    return 0
+}
+
+# 回傳給 OSD 用的麥克風狀態字串
+source_body() {
+    local pattern="$1" label="$2"
+    if switch_source "$pattern" "$label"; then
+        echo "麥克風: $label"
+    else
+        echo "麥克風: $label 未連線"
+    fi
 }
 
 # 裝置不在線時,把現有 sink 列進通知,當作 pattern 對不上的除錯線索
@@ -76,13 +117,15 @@ switch_to() {
 
 # 切到 USB 裝置的共同流程
 switch_usb() {
-    local pattern="$1" label="$2" sink
+    local pattern="$1" label="$2" src_pattern="$3" src_label="$4" sink body
     sink=$(find_sink "$pattern")
     if [[ -z "$sink" ]]; then
         report_missing "$label"
         exit 1
     fi
-    switch_to "$sink" "$label" && osd "$label"
+    switch_to "$sink" "$label" || return 1
+    [[ -n "$src_pattern" ]] && body=$(source_body "$src_pattern" "$src_label")
+    osd "$label" audio-card "$body"
 }
 
 case "$1" in
@@ -96,10 +139,10 @@ case "$1" in
         switch_to "$C20_SINK" "C20 光纖" || exit 1
         # 韌體已修掉換源延遲,不必再等就能直接 play
         timeout 3 "$AUDIOPRO" play >/dev/null 2>&1
-        osd "C20 光纖"
+        osd "C20 光纖" audio-card "$(source_body "$SNOWBALL_PATTERN" "Snowball")"
         ;;
     arctis)
-        switch_usb "$ARCTIS_PATTERN" "Arctis Nova 7"
+        switch_usb "$ARCTIS_PATTERN" "Arctis Nova 7" "$NOVA7_MIC_PATTERN" "Nova 7 麥克風"
         ;;
     moonriver)
         switch_usb "$MOONRIVER_PATTERN" "Moonriver 3"
