@@ -50,11 +50,11 @@ for_window [class="steam"]  move --no-auto-back-and-forth container to workspace
 for_window [class="Steam" floating] no_focus
 
 
-for_window [app_id="gamescope"] move --no-auto-back-and-forth container to workspace $ws3
-for_window [class="steam_app_2357570"] move --no-auto-back-and-forth container to workspace $ws3
-for_window [class="steam_app_[0-9]+"] move --no-auto-back-and-forth container to workspace $ws3
-for_window [class="steam_app_default"] move --no-auto-back-and-forth container to workspace $ws5
-for_window [class="overwatch\.exe"] move --no-auto-back-and-forth container to workspace $ws3
+for_window [app_id="gamescope"] move --no-auto-back-and-forth container to workspace $ws3, focus
+for_window [class="steam_app_2357570"] move --no-auto-back-and-forth container to workspace $ws3, focus
+for_window [class="steam_app_[0-9]+"] move --no-auto-back-and-forth container to workspace $ws3, focus
+for_window [class="steam_app_default"] move --no-auto-back-and-forth container to workspace $ws5, focus
+for_window [class="overwatch\.exe"] move --no-auto-back-and-forth container to workspace $ws3, focus
 
 # IDEs
 # When running in native wayland mode
