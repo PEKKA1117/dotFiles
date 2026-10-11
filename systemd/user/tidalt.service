@@ -1,0 +1,22 @@
+[Unit]
+Description=tidalt — Tidal HiFi music player daemon
+Documentation=https://github.com/Benehiko/tidalt
+After=graphical-session.target
+PartOf=graphical-session.target
+# Back-stop for any failure that does restart: give up after 5 attempts in 5
+# minutes instead of retrying forever.
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tidalt daemon
+Restart=on-failure
+RestartSec=5s
+# Exiting because another instance already holds the MPRIS name is a refusal,
+# not a fault: restarting cannot clear it while that instance lives, and the
+# retries only fill the journal.
+RestartPreventExitStatus=3
+
+[Install]
+WantedBy=graphical-session.target
