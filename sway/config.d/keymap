@@ -113,7 +113,7 @@ bindsym {
 
     # Show the next scratchpad window or hide the focused scratchpad window.
     # If there are multiple scratchpad windows, this command cycles through them.
-    $mod+minus scratchpad show
+    $mod+minus exec ~/.config/sway/scripts/scratchpad_show.sh
 }
 
 #

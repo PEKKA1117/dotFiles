@@ -36,6 +36,7 @@ for_window [title="waybar_s-tui"] floating enable, resize set width 50 ppt heigh
 for_window [title="waybar_calcurse"] floating enable, resize set width 60 ppt height 60 ppt
 for_window [title="waybar_calcurse-caldav"] floating enable, move position cursor
 for_window [title="sway_config"] floating enable, resize set width 80 ppt height 80 ppt
+for_window [app_id="com.gabm.satty"] move scratchpad
 
 # Inhibit idle
 for_window [app_id="librewolf"] inhibit_idle fullscreen

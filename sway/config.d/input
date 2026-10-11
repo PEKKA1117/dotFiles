@@ -18,7 +18,7 @@ bindgesture {
     swipe:right workspace prev
     swipe:left exec ~/.config/sway/scripts/advance_workspace.sh
     swipe:up move scratchpad
-    swipe:down scratchpad show
+    swipe:down exec ~/.config/sway/scripts/scratchpad_show.sh
 }
 
 # Enable numlock by default
