@@ -1,8 +1,6 @@
 # dotFiles
-## WARNING: This doc is a Claude & Copliot crap. Read the dir tree will be faster and more correct
 
-
-A comprehensive Wayland-based Linux desktop environment configuration for Arch-based systems (Garuda Linux).
+My `~/.config` on Garuda Linux (Arch): Sway (SwayFX) on Wayland, Tokyo Night everywhere, vim keys.
 
 [English](#english) | [繁體中文](#繁體中文)
 
@@ -10,588 +8,176 @@ A comprehensive Wayland-based Linux desktop environment configuration for Arch-b
 
 ## English
 
-### Overview
+### How the repo works
 
-This repository contains my personal dotfiles for a cohesive, developer-focused desktop environment built on:
+The repo **is** `~/.config`. Nothing is symlinked: `.gitignore` keeps out browser
+profiles, caches, credentials and app state, and everything else that is tracked
+lives where the app expects it. `~/.zshrc` is a symlink to `zsh/.zshrc`.
 
-- **Sway** - Tiling Wayland compositor with SwayFX enhancements
-- **Tokyo Night** - Consistent color scheme across all applications
-- **Vim-centric** - Familiar keybindings throughout the environment
-- **Developer tooling** - Full LSP support, formatters, and Claude Code integration
+To use it on a fresh machine, back up your own `~/.config` first, then:
 
-### Screenshots
-
-*Coming soon*
-
-### Features
-
-#### Window Management
-- Sway with SwayFX visual enhancements (blur, shadows, rounded corners)
-- 10 workspaces across dual monitors
-- Vim-style navigation (`$mod+h/j/k/l`)
-- Smart workspace creation and navigation
-- Gesture support for touchpad users
-
-#### Development Environment
-- **Neovim** with lazy.nvim plugin manager
-- LSP support for Lua, C/C++, Vim, and more
-- Telescope fuzzy finder (`Ctrl+P` files, `Ctrl+G` grep)
-- Treesitter syntax highlighting for 13+ languages
-- Claude Code AI integration
-
-#### System Monitoring
-- **Waybar** status bar with 40+ modules
-- **MangoHud** GPU overlay for gaming (165 FPS limit)
-- **Bottom** terminal-based resource monitor
-
-#### Applications
-| Application | Purpose |
-|-------------|---------|
-| Foot | GPU-accelerated terminal emulator |
-| nwg-drawer | Application drawer/launcher |
-| Mako | Notification daemon |
-| Yazi | Terminal file manager |
-| Swayr | Window switcher |
-
-### Requirements
-
-- Arch Linux or derivatives (tested on Garuda Linux)
-- Wayland session
-- Sway window manager
-- Required packages:
-  ```bash
-  # Core
-  sway swaylock swayidle swaybg waybar mako foot fuzzel
-
-  # Utilities
-  grim slurp wl-clipboard cliphist kanshi autotiling
-
-  # Optional
-  mangohud bottom neovim yazi wofi
-  ```
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Dragonfly911117/dotFiles.git ~/.dotfiles
-   ```
-
-2. **Backup existing configs:**
-   ```bash
-   mkdir -p ~/.config-backup
-   cp -r ~/.config/{sway,waybar,nvim,foot,fuzzel,mako} ~/.config-backup/
-   ```
-
-3. **Create symlinks:**
-   ```bash
-   cd ~/.dotfiles
-
-   # Sway
-   ln -sf $(pwd)/sway ~/.config/sway
-
-   # Waybar
-   ln -sf $(pwd)/waybar ~/.config/waybar
-
-   # Neovim
-   ln -sf $(pwd)/nvim ~/.config/nvim
-
-   # Terminal
-   ln -sf $(pwd)/foot ~/.config/foot
-
-   # Launcher
-   ln -sf $(pwd)/fuzzel ~/.config/fuzzel
-
-   # Notifications
-   ln -sf $(pwd)/mako ~/.config/mako
-
-   # Other apps
-   ln -sf $(pwd)/MangoHud ~/.config/MangoHud
-   ln -sf $(pwd)/bottom ~/.config/bottom
-   ln -sf $(pwd)/swayr ~/.config/swayr
-   ln -sf $(pwd)/yazi ~/.config/yazi
-   ln -sf $(pwd)/wofi ~/.config/wofi
-   ```
-
-4. **Start Sway:**
-   ```bash
-   # From TTY
-   sway
-
-   # Or add to your shell profile
-   [ "$(tty)" = "/dev/tty1" ] && exec sway
-   ```
-
-### Directory Structure
-
+```sh
+git clone git@github.com:PEKKA1117/dotFiles.git ~/.config
+ln -s ~/.config/zsh/.zshrc ~/.zshrc
 ```
-dotFiles/
-├── MangoHud/           # GPU performance overlay
-│   └── MangoHud.conf
-├── bottom/             # System resource monitor
-│   └── bottom.toml
-├── foot/               # Terminal emulator
-│   └── foot.ini
-├── fuzzel/             # Application launcher
-│   └── fuzzel.ini
-├── mako/               # Notification daemon
-│   └── config
-├── nvim/               # Neovim editor
-│   ├── init.lua
-│   └── lua/
-│       ├── config/
-│       │   └── lazy.lua
-│       └── plugins/
-│           ├── claude-code.lua
-│           ├── lsp.lua
-│           ├── lua-line.lua
-│           ├── mdRender.lua
-│           ├── neo-tree.lua
-│           ├── none-ls.lua
-│           ├── telescope.lua
-│           ├── toykonight.lua
-│           └── treesitter.lua
-├── sway/               # Window manager
-│   ├── config
-│   ├── variables
-│   ├── config.d/
-│   │   ├── application_defaults
-│   │   ├── autostart_applications
-│   │   ├── default
-│   │   ├── input
-│   │   ├── keymap
-│   │   ├── output
-│   │   ├── theme
-│   │   └── workspace
-│   ├── scripts/
-│   │   ├── advance_workspace.sh
-│   │   ├── bluetooth_toggle.sh
-│   │   ├── screenshot_display.sh
-│   │   ├── screenshot_window.sh
-│   │   └── swayfader.py
-│   └── swayfx/
-├── swayr/              # Window switcher
-│   └── config.toml
-├── waybar/             # Status bar
-│   ├── config
-│   └── style.css
-├── wofi/               # Alt launcher
-│   └── config
-└── yazi/               # File manager
-    ├── theme.toml
-    └── yazi.toml
-```
+
+Expect to edit hardware-specific bits (outputs, audio devices, workspaces) before it is usable.
+
+### What's in it
+
+| Area | Directories |
+|------|-------------|
+| Desktop | `sway/` (+ `swayfx/`, `scripts/`), `swayr/`, `waybar/`, `mako/`, `fuzzel/`, `wofi/`, `nwg-drawer/`, `gtklock/`, `swappy/`, `azote/`, `xdg-desktop-portal/`, `mimeapps.list` |
+| Theming | `gtk-3.0/`, `gtk-4.0/`, `qt5ct/`, `qt6ct/`, `Kvantum/`, `kdeglobals`, `nwg-look/`, `environment.d/` |
+| Terminal & CLI | `foot/`, `zsh/`, `oh-my-zsh-custom/`, `starship.toml`, `nvim/`, `micro/`, `yazi/`, `lazygit/`, `bottom/`, `htop/`, `git/`, `pacman/`, `pacseek/`, `pamac/` |
+| Audio | `pipewire/`, `wireplumber/`, `easyeffects/`, `jamesdsp/`, `audiopro/`, `spotify-player/`, `spicetify/`, `tidal-player/`, `mpv/`, `vlc/` |
+| Gaming & GPU | `MangoHud/`, `goverlay/`, `vkBasalt/`, `vkSumi/`, `lsfg-vk/`, `lact/`, `leshade/`, `gamemode.ini`, `sunshine/`, `OpenRGB/`, `rivalcfg/` |
+| Services | `systemd/user/` — units plus their `*.wants/` enablement links |
+
+### Sway
+
+`sway/config` includes `variables`, then every file in `config.d/` and `swayfx/`.
+
+| File | Contents |
+|------|----------|
+| `variables` | `$mod` (Super), `$term` (footclient), `$browser` (Vivaldi Snapshot), launchers, audio device order |
+| `config.d/keymap` | All non-workspace bindings |
+| `config.d/workspace` | Workspace ↔ output mapping and `$mod+1–0` bindings |
+| `config.d/output` | DP-3 3840×2160 (VRR off), HDMI-A-1 1920×1080 |
+| `config.d/application_defaults` | Floating rules and workspace assignments |
+| `config.d/autostart_applications` | Session startup; network apps wait for ProtonVPN via `scripts/launch_after_vpn.sh` |
+| `swayfx/swayfx` | Corner radius, blur, shadows, inactive dimming |
+
+Workspaces 1, 3, 5 live on DP-3; 2, 4, 8, 9, 10 on HDMI-A-1; 6 and 7 go wherever focus is.
 
 ### Keybindings
 
-#### General
-| Keybinding | Action |
-|------------|--------|
-| `$mod + Return` | Open terminal (Foot) |
-| `$mod + d` | Application launcher (wofi) |
-| `$mod + Shift + q` | Close focused window |
-| `$mod + Shift + e` | Exit Sway |
-| `$mod + Shift + c` | Reload Sway config |
+| Key | Action |
+|-----|--------|
+| `$mod+Return` | Terminal (footclient) |
+| `$mod+d` | Launcher (wofi) |
+| `$mod+Shift+q` | Close window |
+| `$mod+h/j/k/l` / `$mod+Shift+h/j/k/l` | Focus / move window |
+| `$mod+Ctrl+h/j/k/l` | Resize |
+| `$mod+1–0` / `$mod+Shift+1–0` | Go to / move window to workspace |
+| `$mod+f` / `$mod+space` | Fullscreen / toggle floating |
+| `$mod+Shift+s/w/e` | Stacking / tabbed / toggle split |
+| `$mod+minus` / `$mod+Shift+minus` | Show / send to scratchpad |
+| `Alt+Tab`, `$mod+Tab`, `$mod+Shift+Tab` | swayr: last window, window list, workspace/window list |
+| `$mod+v` / `$mod+x` | Clipboard history / delete an entry |
+| `$mod+e` / `$mod+b` / `$mod+t` / `$mod+c` | Thunar / browser / Mousepad / galculator |
+| `$mod+Shift+a` | Lock (gtklock) |
+| `$mod+Shift+c` | Reload sway |
+| `Print` / `Ctrl+Print` / `Shift+Print` | Screenshot monitor / window / display → satty |
+| `$mod+F1` / `$mod+F2` | Monitor mode: 4K / high refresh |
+| `$mod+F3` / `F4` / `F10` | Switch audio output (and mic): C20 / Arctis / Moonriver |
+| `$mod+F5–F8` | Disable / enable DP-3, HDMI-A-1 |
+| `$mod+F9` | Toggle VRR on DP-3 |
+| `$mod+F11` | Toggle away power mode |
 
-#### Navigation
-| Keybinding | Action |
-|------------|--------|
-| `$mod + h/j/k/l` | Focus left/down/up/right |
-| `$mod + Shift + h/j/k/l` | Move window left/down/up/right |
-| `$mod + 1-0` | Switch to workspace 1-10 |
-| `$mod + Shift + 1-0` | Move window to workspace 1-10 |
+### Theming
 
-#### Layout
-| Keybinding | Action |
-|------------|--------|
-| `$mod + b` | Split horizontal |
-| `$mod + v` | Split vertical |
-| `$mod + f` | Toggle fullscreen |
-| `$mod + Shift + space` | Toggle floating |
-| `$mod + e` | Toggle split layout |
+Tokyo Night with a purple accent:
 
-#### Utilities
-| Keybinding | Action |
-|------------|--------|
-| `Print` | Screenshot (selection) |
-| `$mod + Print` | Screenshot (window) |
-| `XF86Audio*` | Volume/media controls |
+| | Hex |
+|--|-----|
+| Background | `#1a1b26` / `#24283b` |
+| Foreground | `#c0caf5` |
+| Blue | `#7aa2f7` |
+| Accent | `#8478de` |
+| Purple | `#bb9af7` |
+| Selection | `#33467c` |
+| Border | `#565f89` |
 
-### Color Scheme
+GTK and Qt are themed from config files alone — no theme packages. The GTK
+stylesheets are generated by `gtk-3.0/recolour-theme.py` from the stock
+Adwaita/Default themes, and the Kvantum theme by
+`Kvantum/KvTokyoNight/recolour-from-arc.py` from KvArcDark. See `CLAUDE.md` for
+the regeneration commands and the environment variables Qt needs. Icons are
+`Tela-circle-purple-dark`.
 
-Tokyo Night with custom purple accent:
+### Neovim
 
-| Color | Hex | Usage |
-|-------|-----|-------|
-| Background | `#1a1b26` | Primary background |
-| Background Alt | `#24283b` | Secondary background |
-| Foreground | `#c0caf5` | Text |
-| Primary | `#7aa2f7` | Blue accents |
-| Accent | `#8478de` | Custom purple |
-| Secondary | `#bb9af7` | Purple accents |
-| Selection | `#33467c` | Selections |
-| Border | `#565f89` | Active borders |
-
-### Hardware Setup
-
-This configuration is optimized for a dual-monitor setup:
-
-- **Primary (DP-3):** 2560x1440 - Workspaces 1, 3, 5
-- **Secondary (HDMI-A-1):** 1920x1080 - Workspaces 2, 4, 8, 9, 10
-- Workspaces 6, 7 have no explicit output assignment
-
-Modify `sway/config.d/output` and `sway/config.d/workspace` for your setup.
-
-### Customization
-
-#### Change Theme Colors
-1. Update hex values in:
-   - `sway/config.d/theme`
-   - `waybar/style.css`
-   - `foot/foot.ini`
-   - `fuzzel/fuzzel.ini`
-   - `mako/config`
-   - `nvim/lua/plugins/toykonight.lua`
-
-#### Add Neovim Plugins
-1. Create `nvim/lua/plugins/your-plugin.lua`
-2. Return lazy.nvim plugin spec
-3. Run `:Lazy sync`
-
-#### Add Autostart Applications
-Edit `sway/config.d/autostart_applications`:
-```bash
-exec your-application
-```
-
-### Troubleshooting
-
-**Sway won't start:**
-```bash
-# Check for config errors
-sway -d 2>&1 | head -50
-```
-
-**Waybar not showing:**
-```bash
-killall waybar
-waybar &
-```
-
-**Neovim plugins not loading:**
-```bash
-nvim --headless "+Lazy! sync" +qa
-```
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-### License
-
-This project is open source. Feel free to use, modify, and distribute.
-
-### Acknowledgments
-
-- [Sway](https://swaywm.org/) - Wayland compositor
-- [SwayFX](https://github.com/WillPower3309/swayfx) - Visual enhancements
-- [Tokyo Night](https://github.com/folke/tokyonight.nvim) - Color scheme
-- [lazy.nvim](https://github.com/folke/lazy.nvim) - Plugin manager
+lazy.nvim, plugins one per file in `nvim/lua/plugins/`: Mason + native LSP
+(`lua_ls`, `vimls`, `clangd`), Telescope (`Ctrl+P` files, `Ctrl+G` grep,
+`Ctrl+B` buffers), oil.nvim (`-` / `<leader>e`), Treesitter, none-ls, Lualine,
+markdown rendering, Claude Code.
 
 ---
 
 ## 繁體中文
 
-### 概述
+### 運作方式
 
-這個儲存庫包含我的個人 dotfiles，用於建立一個基於以下技術的整合開發環境：
+這個 repo **就是** `~/.config`,沒有任何 symlink:`.gitignore` 排除瀏覽器設定檔、快取、憑證與應用程式狀態,其餘追蹤的檔案都放在應用程式預期的位置。`~/.zshrc` 是指向 `zsh/.zshrc` 的 symlink。
 
-- **Sway** - 搭配 SwayFX 視覺增強的 Wayland 平鋪式合成器
-- **Tokyo Night** - 所有應用程式統一的配色方案
-- **Vim 風格** - 整個環境使用熟悉的快捷鍵
-- **開發者工具** - 完整的 LSP 支援、格式化工具和 Claude Code 整合
+在新機器上使用前請先備份自己的 `~/.config`,接著:
 
-### 螢幕截圖
-
-*即將推出*
-
-### 功能特色
-
-#### 視窗管理
-- Sway 搭配 SwayFX 視覺增強（模糊、陰影、圓角）
-- 雙螢幕 10 個工作區
-- Vim 風格導航（`$mod+h/j/k/l`）
-- 智慧工作區建立與導航
-- 觸控板手勢支援
-
-#### 開發環境
-- **Neovim** 搭配 lazy.nvim 外掛管理器
-- LSP 支援 Lua、C/C++、Vim 等語言
-- Telescope 模糊搜尋（`Ctrl+P` 檔案、`Ctrl+G` 搜尋）
-- Treesitter 語法高亮支援 13+ 種語言
-- Claude Code AI 整合
-
-#### 系統監控
-- **Waybar** 狀態列，40+ 個模組
-- **MangoHud** GPU 顯示覆蓋層（165 FPS 限制）
-- **Bottom** 終端機系統資源監控
-
-#### 應用程式
-| 應用程式 | 用途 |
-|----------|------|
-| Foot | GPU 加速終端機模擬器 |
-| nwg-drawer | 應用程式啟動器 |
-| Mako | 通知守護程式 |
-| Yazi | 終端機檔案管理器 |
-| Swayr | 視窗切換器 |
-
-### 系統需求
-
-- Arch Linux 或其衍生版本（在 Garuda Linux 上測試）
-- Wayland 環境
-- Sway 視窗管理器
-- 必要套件：
-  ```bash
-  # 核心元件
-  sway swaylock swayidle swaybg waybar mako foot fuzzel
-
-  # 工具程式
-  grim slurp wl-clipboard cliphist kanshi autotiling
-
-  # 選用元件
-  mangohud bottom neovim yazi wofi
-  ```
-
-### 安裝方式
-
-1. **複製儲存庫：**
-   ```bash
-   git clone https://github.com/Dragonfly911117/dotFiles.git ~/.dotfiles
-   ```
-
-2. **備份現有設定：**
-   ```bash
-   mkdir -p ~/.config-backup
-   cp -r ~/.config/{sway,waybar,nvim,foot,fuzzel,mako} ~/.config-backup/
-   ```
-
-3. **建立符號連結：**
-   ```bash
-   cd ~/.dotfiles
-
-   # Sway
-   ln -sf $(pwd)/sway ~/.config/sway
-
-   # Waybar
-   ln -sf $(pwd)/waybar ~/.config/waybar
-
-   # Neovim
-   ln -sf $(pwd)/nvim ~/.config/nvim
-
-   # 終端機
-   ln -sf $(pwd)/foot ~/.config/foot
-
-   # 啟動器
-   ln -sf $(pwd)/fuzzel ~/.config/fuzzel
-
-   # 通知
-   ln -sf $(pwd)/mako ~/.config/mako
-
-   # 其他應用程式
-   ln -sf $(pwd)/MangoHud ~/.config/MangoHud
-   ln -sf $(pwd)/bottom ~/.config/bottom
-   ln -sf $(pwd)/swayr ~/.config/swayr
-   ln -sf $(pwd)/yazi ~/.config/yazi
-   ln -sf $(pwd)/wofi ~/.config/wofi
-   ```
-
-4. **啟動 Sway：**
-   ```bash
-   # 從 TTY 啟動
-   sway
-
-   # 或加入 shell 設定檔
-   [ "$(tty)" = "/dev/tty1" ] && exec sway
-   ```
-
-### 目錄結構
-
+```sh
+git clone git@github.com:PEKKA1117/dotFiles.git ~/.config
+ln -s ~/.config/zsh/.zshrc ~/.zshrc
 ```
-dotFiles/
-├── MangoHud/           # GPU 效能顯示
-│   └── MangoHud.conf
-├── bottom/             # 系統資源監控
-│   └── bottom.toml
-├── foot/               # 終端機模擬器
-│   └── foot.ini
-├── fuzzel/             # 應用程式啟動器
-│   └── fuzzel.ini
-├── mako/               # 通知守護程式
-│   └── config
-├── nvim/               # Neovim 編輯器
-│   ├── init.lua
-│   └── lua/
-│       ├── config/
-│       │   └── lazy.lua
-│       └── plugins/
-│           ├── claude-code.lua
-│           ├── lsp.lua
-│           ├── lua-line.lua
-│           ├── mdRender.lua
-│           ├── neo-tree.lua
-│           ├── none-ls.lua
-│           ├── telescope.lua
-│           ├── toykonight.lua
-│           └── treesitter.lua
-├── sway/               # 視窗管理器
-│   ├── config
-│   ├── variables
-│   ├── config.d/
-│   │   ├── application_defaults
-│   │   ├── autostart_applications
-│   │   ├── default
-│   │   ├── input
-│   │   ├── keymap
-│   │   ├── output
-│   │   ├── theme
-│   │   └── workspace
-│   ├── scripts/
-│   │   ├── advance_workspace.sh
-│   │   ├── bluetooth_toggle.sh
-│   │   ├── screenshot_display.sh
-│   │   ├── screenshot_window.sh
-│   │   └── swayfader.py
-│   └── swayfx/
-├── swayr/              # 視窗切換器
-│   └── config.toml
-├── waybar/             # 狀態列
-│   ├── config
-│   └── style.css
-├── wofi/               # 替代啟動器
-│   └── config
-└── yazi/               # 檔案管理器
-    ├── theme.toml
-    └── yazi.toml
-```
+
+螢幕、音效裝置、工作區等跟硬體綁定的設定需要自行修改。
+
+### 內容
+
+| 類別 | 目錄 |
+|------|------|
+| 桌面 | `sway/`(含 `swayfx/`、`scripts/`)、`swayr/`、`waybar/`、`mako/`、`fuzzel/`、`wofi/`、`nwg-drawer/`、`gtklock/`、`swappy/`、`azote/`、`xdg-desktop-portal/`、`mimeapps.list` |
+| 主題 | `gtk-3.0/`、`gtk-4.0/`、`qt5ct/`、`qt6ct/`、`Kvantum/`、`kdeglobals`、`nwg-look/`、`environment.d/` |
+| 終端與 CLI | `foot/`、`zsh/`、`oh-my-zsh-custom/`、`starship.toml`、`nvim/`、`micro/`、`yazi/`、`lazygit/`、`bottom/`、`htop/`、`git/`、`pacman/`、`pacseek/`、`pamac/` |
+| 音訊 | `pipewire/`、`wireplumber/`、`easyeffects/`、`jamesdsp/`、`audiopro/`、`spotify-player/`、`spicetify/`、`tidal-player/`、`mpv/`、`vlc/` |
+| 遊戲與 GPU | `MangoHud/`、`goverlay/`、`vkBasalt/`、`vkSumi/`、`lsfg-vk/`、`lact/`、`leshade/`、`gamemode.ini`、`sunshine/`、`OpenRGB/`、`rivalcfg/` |
+| 服務 | `systemd/user/`:unit 檔與 `*.wants/` 啟用連結 |
+
+### Sway
+
+`sway/config` 先載入 `variables`,再載入 `config.d/` 與 `swayfx/` 下的所有檔案。
+
+| 檔案 | 內容 |
+|------|------|
+| `variables` | `$mod`(Super)、`$term`(footclient)、`$browser`(Vivaldi Snapshot)、啟動器、音效裝置順序 |
+| `config.d/keymap` | 工作區以外的所有快捷鍵 |
+| `config.d/workspace` | 工作區與螢幕對應、`$mod+1–0` |
+| `config.d/output` | DP-3 3840×2160(VRR 關閉)、HDMI-A-1 1920×1080 |
+| `config.d/application_defaults` | 浮動視窗規則與工作區指派 |
+| `config.d/autostart_applications` | 開機啟動;需要網路的程式透過 `scripts/launch_after_vpn.sh` 等 ProtonVPN 連上才啟動 |
+| `swayfx/swayfx` | 圓角、模糊、陰影、非焦點視窗變暗 |
+
+工作區 1、3、5 在 DP-3;2、4、8、9、10 在 HDMI-A-1;6、7 跟著目前焦點的螢幕。
 
 ### 快捷鍵
 
-#### 一般操作
-| 快捷鍵 | 動作 |
-|--------|------|
-| `$mod + Return` | 開啟終端機（Foot）|
-| `$mod + d` | 應用程式啟動器（wofi）|
-| `$mod + Shift + q` | 關閉目前視窗 |
-| `$mod + Shift + e` | 離開 Sway |
-| `$mod + Shift + c` | 重新載入 Sway 設定 |
+| 按鍵 | 動作 |
+|------|------|
+| `$mod+Return` | 終端機(footclient) |
+| `$mod+d` | 啟動器(wofi) |
+| `$mod+Shift+q` | 關閉視窗 |
+| `$mod+h/j/k/l` / `$mod+Shift+h/j/k/l` | 移動焦點 / 移動視窗 |
+| `$mod+Ctrl+h/j/k/l` | 調整大小 |
+| `$mod+1–0` / `$mod+Shift+1–0` | 切換到 / 移動視窗到工作區 |
+| `$mod+f` / `$mod+space` | 全螢幕 / 切換浮動 |
+| `$mod+Shift+s/w/e` | 堆疊 / 分頁 / 切換分割 |
+| `$mod+minus` / `$mod+Shift+minus` | 顯示 / 收進 scratchpad |
+| `Alt+Tab`、`$mod+Tab`、`$mod+Shift+Tab` | swayr:上一個視窗、視窗清單、工作區/視窗清單 |
+| `$mod+v` / `$mod+x` | 剪貼簿歷史 / 刪除一筆 |
+| `$mod+e` / `$mod+b` / `$mod+t` / `$mod+c` | Thunar / 瀏覽器 / Mousepad / galculator |
+| `$mod+Shift+a` | 鎖定畫面(gtklock) |
+| `$mod+Shift+c` | 重新載入 sway |
+| `Print` / `Ctrl+Print` / `Shift+Print` | 截圖螢幕 / 視窗 / 顯示器 → satty |
+| `$mod+F1` / `$mod+F2` | 螢幕模式:4K / 高更新率 |
+| `$mod+F3` / `F4` / `F10` | 切換音效輸出(連同麥克風):C20 / Arctis / Moonriver |
+| `$mod+F5–F8` | 關閉 / 開啟 DP-3、HDMI-A-1 |
+| `$mod+F9` | 切換 DP-3 的 VRR |
+| `$mod+F11` | 切換離座省電模式 |
 
-#### 導航
-| 快捷鍵 | 動作 |
-|--------|------|
-| `$mod + h/j/k/l` | 焦點 左/下/上/右 |
-| `$mod + Shift + h/j/k/l` | 移動視窗 左/下/上/右 |
-| `$mod + 1-0` | 切換到工作區 1-10 |
-| `$mod + Shift + 1-0` | 移動視窗到工作區 1-10 |
+### 主題
 
-#### 佈局
-| 快捷鍵 | 動作 |
-|--------|------|
-| `$mod + b` | 水平分割 |
-| `$mod + v` | 垂直分割 |
-| `$mod + f` | 切換全螢幕 |
-| `$mod + Shift + space` | 切換浮動模式 |
-| `$mod + e` | 切換分割佈局 |
+Tokyo Night 配紫色強調色,色碼見上方英文版表格。
 
-#### 工具
-| 快捷鍵 | 動作 |
-|--------|------|
-| `Print` | 螢幕截圖（選取區域）|
-| `$mod + Print` | 螢幕截圖（目前視窗）|
-| `XF86Audio*` | 音量/媒體控制 |
+GTK 與 Qt 只靠設定檔上色,沒有安裝任何主題套件。GTK 樣式表由 `gtk-3.0/recolour-theme.py` 從內建的 Adwaita/Default 主題產生,Kvantum 主題由 `Kvantum/KvTokyoNight/recolour-from-arc.py` 從 KvArcDark 產生。重新產生的指令與 Qt 需要的環境變數見 `CLAUDE.md`。圖示主題為 `Tela-circle-purple-dark`。
 
-### 配色方案
+### Neovim
 
-Tokyo Night 搭配自訂紫色強調色：
-
-| 顏色 | 色碼 | 用途 |
-|------|------|------|
-| 背景色 | `#1a1b26` | 主要背景 |
-| 次要背景 | `#24283b` | 次要背景 |
-| 前景色 | `#c0caf5` | 文字 |
-| 主色 | `#7aa2f7` | 藍色強調 |
-| 強調色 | `#8478de` | 自訂紫色 |
-| 次要色 | `#bb9af7` | 紫色強調 |
-| 選取色 | `#33467c` | 選取區域 |
-| 邊框色 | `#565f89` | 活動邊框 |
-
-### 硬體設定
-
-此設定針對雙螢幕環境最佳化：
-
-- **主螢幕（DP-3）：** 2560x1440 - 工作區 1、3、5
-- **副螢幕（HDMI-A-1）：** 1920x1080 - 工作區 2、4、8、9、10
-- 工作區 6、7 無明確輸出指定
-
-請根據您的設備修改 `sway/config.d/output` 和 `sway/config.d/workspace`。
-
-### 自訂設定
-
-#### 更改主題顏色
-1. 更新以下檔案中的色碼：
-   - `sway/config.d/theme`
-   - `waybar/style.css`
-   - `foot/foot.ini`
-   - `fuzzel/fuzzel.ini`
-   - `mako/config`
-   - `nvim/lua/plugins/toykonight.lua`
-
-#### 新增 Neovim 外掛
-1. 建立 `nvim/lua/plugins/your-plugin.lua`
-2. 回傳 lazy.nvim 外掛規格
-3. 執行 `:Lazy sync`
-
-#### 新增自動啟動應用程式
-編輯 `sway/config.d/autostart_applications`：
-```bash
-exec your-application
-```
-
-### 疑難排解
-
-**Sway 無法啟動：**
-```bash
-# 檢查設定錯誤
-sway -d 2>&1 | head -50
-```
-
-**Waybar 未顯示：**
-```bash
-killall waybar
-waybar &
-```
-
-**Neovim 外掛未載入：**
-```bash
-nvim --headless "+Lazy! sync" +qa
-```
-
-### 貢獻
-
-1. Fork 此儲存庫
-2. 建立功能分支
-3. 進行修改
-4. 提交 Pull Request
-
-### 授權
-
-本專案為開源軟體，歡迎使用、修改和散布。
-
-### 致謝
-
-- [Sway](https://swaywm.org/) - Wayland 合成器
-- [SwayFX](https://github.com/WillPower3309/swayfx) - 視覺增強
-- [Tokyo Night](https://github.com/folke/tokyonight.nvim) - 配色方案
-- [lazy.nvim](https://github.com/folke/lazy.nvim) - 外掛管理器
+lazy.nvim,每個外掛一個檔案放在 `nvim/lua/plugins/`:Mason + 原生 LSP(`lua_ls`、`vimls`、`clangd`)、Telescope(`Ctrl+P` 檔案、`Ctrl+G` grep、`Ctrl+B` buffer)、oil.nvim(`-` / `<leader>e`)、Treesitter、none-ls、Lualine、Markdown 渲染、Claude Code。

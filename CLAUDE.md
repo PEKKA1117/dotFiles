@@ -43,7 +43,7 @@ Primary window manager with modular configuration:
 - `variables` - Environment variables (terminal=footclient, browser, editor, menu)
 - `config.d/keymap` - Keybindings for launchers, screenshots, resizing
 - `config.d/workspace` - 10 workspaces bound to dual monitors
-- `config.d/output` - Display setup (DP-3: 2560x1440, HDMI-A-1: 1920x1080)
+- `config.d/output` - Display setup (DP-3: 3840x2160 VRR off, HDMI-A-1: 1920x1080)
 - `config.d/application_defaults` - Floating rules, workspace assignments
 - `config.d/autostart_applications` - Startup services and apps
 
@@ -63,7 +63,7 @@ Lua-based configuration with lazy.nvim plugin manager:
 - `lua/plugins/` - Individual plugin configurations:
   - `lsp.lua` - Mason LSP setup (Lua, Vim, Clang servers)
   - `telescope.lua` - Fuzzy finder (Ctrl+P files, Ctrl+G grep, Ctrl+B buffers)
-  - `neo-tree.lua` - File explorer with git integration
+  - `oil.lua` - File explorer (oil.nvim, `-` / `<leader>e`)
   - `treesitter.lua` - Syntax highlighting (13 languages)
   - `none-ls.lua` - Formatters (stylua, clang-format, ESLint)
   - `claude-code.lua` - Claude Code AI integration
@@ -229,7 +229,7 @@ Common patterns across the configuration:
 ## Hardware Context
 
 **Dual Monitor Setup:**
-- Primary: DP-3 @ 2560x1440
+- Primary: DP-3 @ 3840x2160
 - Secondary: HDMI-A-1 @ 1920x1080
 
 **Workspace Distribution:**
