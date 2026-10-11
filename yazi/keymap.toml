@@ -1,0 +1,13 @@
+# yazi 自訂快捷鍵
+
+# c z：用 7z 壓縮選取的檔案（沒選取時壓縮游標所在檔案）;%s 由 yazi 自動加引號，可先修改檔名
+[[mgr.prepend_keymap]]
+on   = ["c", "z"]
+run  = 'shell --block --interactive -- 7z a archive.7z %s'
+desc = "7z 壓縮選取的檔案"
+
+# Ctrl+g：在目前目錄開啟 lazygit
+[[mgr.prepend_keymap]]
+on   = "<C-g>"
+run  = "shell --block -- lazygit"
+desc = "開啟 lazygit"
