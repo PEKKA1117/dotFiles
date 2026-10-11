@@ -1,0 +1,11 @@
+[Unit]
+Description=CalDAV 加密備份推送到 GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# user unit：以 df 身分執行，不需 root（安裝方式見 README）
+ExecStart=%h/claude/caldav/scripts/backup.sh
+Nice=10
+IOSchedulingClass=idle

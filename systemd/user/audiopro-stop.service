@@ -1,0 +1,20 @@
+[Unit]
+# 登出（圖形工作階段結束）時讓 Audio Pro C20 停止播放。
+# 掛在 graphical-session.target 底下:sway 結束 / 使用者登出時,
+# systemd 會停掉這個 unit,觸發 ExecStop。
+Description=登出時停止 Audio Pro C20 播放
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+# oneshot + RemainAfterExit:啟動時什麼都不做,只為了在「停止」時執行指令
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/true
+# audiopro 走網路 (172.16.0.103:443),喇叭沒開或離線時會卡住,
+# 所以加 timeout;前置 "-" 讓失敗不把 unit 標成 failed,以免拖慢登出
+ExecStop=-/usr/bin/timeout 5 %h/.cargo/bin/audiopro stop
+TimeoutStopSec=10
+
+[Install]
+WantedBy=graphical-session.target
