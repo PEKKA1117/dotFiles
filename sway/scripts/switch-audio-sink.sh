@@ -4,11 +4,13 @@
 # 用法: switch-audio-sink.sh {c20|arctis|moonriver}
 
 # ── 裝置對應表：要改就改這裡 ──────────────────────────────
-# C20 走主機板光纖輸出,PCI 路徑固定不會變,直接寫死。
-# USB 裝置會熱插拔,節點名可能隨韌體或插的埠改變,所以用關鍵字比對
-# 當下的 sink 清單,而不是寫死全名。找不到時通知會列出現有 sink,
-# 方便對照後回來改這兩個 pattern。
-C20_SINK="alsa_output.pci-0000_00_1f.3.iec958-stereo"
+# 三個裝置一律用關鍵字比對當下的 sink 清單,不寫死節點全名。
+# C20 的 PCI 路徑雖然固定,但 PipeWire 會在節點名尾端加流水號
+# (alsa_output.pci-0000_00_1f.3.iec958-stereo.4),每次節點重建就往上加,
+# 所以寫死全名遲早會變成 "No such entity"。只比對到 iec958 為止。
+# USB 裝置則是節點名可能隨韌體或插的埠改變。
+# 找不到時通知會列出現有 sink,方便對照後回來改這些 pattern。
+C20_PATTERN="pci-0000_00_1f.3.iec958"
 ARCTIS_PATTERN="arctis"
 MOONRIVER_PATTERN="moonriver"
 
@@ -109,7 +111,7 @@ switch_to() {
 
     # 從光纖切走時讓 C20 停下來。audiopro 走網路(172.16.0.103:443),
     # 喇叭離線時會卡住,一律包 timeout 免得腳本吊死。
-    if [[ "$prev" == "$C20_SINK" && "$sink" != "$C20_SINK" ]]; then
+    if [[ "$prev" == *"$C20_PATTERN"* && "$sink" != *"$C20_PATTERN"* ]]; then
         timeout 3 "$AUDIOPRO" stop >/dev/null 2>&1
     fi
     return 0
@@ -130,13 +132,20 @@ switch_usb() {
 
 case "$1" in
     c20)
+        # 先確定光纖 sink 在線。放在 audiopro 之前:沒 sink 可切的話,
+        # 不該先把喇叭的輸入源撥過去再失敗,也省下一次網路往返。
+        c20_sink=$(find_sink "$C20_PATTERN")
+        if [[ -z "$c20_sink" ]]; then
+            report_missing "C20 光纖"
+            exit 1
+        fi
         # C20 要先把喇叭本身切到光纖輸入。這是網路呼叫,喇叭離線時由
         # timeout 收場,再由下面那則通知說明失敗原因。
         if ! timeout 5 "$AUDIOPRO" source optical >/dev/null 2>&1; then
             osd "C20 無回應(喇叭離線?)" audio-volume-muted
             exit 1
         fi
-        switch_to "$C20_SINK" "C20 光纖" || exit 1
+        switch_to "$c20_sink" "C20 光纖" || exit 1
         # 韌體已修掉換源延遲,不必再等就能直接 play
         timeout 3 "$AUDIOPRO" play >/dev/null 2>&1
         osd "C20 光纖" audio-card "$(source_body "$SNOWBALL_PATTERN" "Snowball")"
