@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# 讓套件編譯避開遊戲正在用的 P-core
+#
+# 預設是「動態」的:沒在遊戲時吃滿全部 20 執行緒,gamemode 一啟動才退到 E-core。
+# 並且會把自己登記到 $ECORE_STATE_DIR,所以編譯途中開遊戲 / 關遊戲時,
+# gamemode-start.sh 與 gamemode-end.sh 能把整棵行程樹即時搬過去或放回來。
+#
+# 用法:ecore paru -Syu
+#       ecore makepkg -si
+#       ecore sudo pacman -Syu
+#
+# 環境變數:
+#   ECORE_FORCE=1  無視 gamemode 狀態,一律只用 E-core
+#   ECORE_OFF=1    完全停用,原樣執行(臨時要全速編譯時用)
+
+set -uo pipefail
+
+if (( $# == 0 )); then
+    echo "用法: ecore <命令> [參數...]" >&2
+    echo "      ECORE_FORCE=1 強制 E-core / ECORE_OFF=1 停用" >&2
+    exit 2
+fi
+
+source "$(dirname "$(readlink -f "$0")")/gamemode-cpu-topology.sh"
+
+[[ "${ECORE_OFF:-0}" == 1 ]] && exec "$@"
+
+detect_topology
+
+# 同質 CPU(無 E-core)就沒有隔離的意義,原樣執行
+[[ -z "${E_CORES:-}" ]] && exec "$@"
+
+# 登記自己。$$ 在 exec 之後仍是同一個 pid,所以先寫再 exec 是有效的。
+# 之所以用 exec 而不是背景子行程 + trap 清理:非互動 shell 會把背景工作的
+# stdin 導到 /dev/null,paru 的 sudo 密碼提示與 PKGBUILD 編輯就全毀了。
+# 代價是登記檔留到行程結束後才由 retask_ecore_trees() 回收。
+mkdir -p "$ECORE_STATE_DIR" && echo "$$" > "$ECORE_STATE_DIR/$$"
+
+if [[ "${ECORE_FORCE:-0}" != 1 ]] && ! gamemode_active; then
+    # 沒在遊戲 —— 全速跑。之後若開了遊戲,gamemode-start.sh 會把這棵樹搬到 E-core
+    exec "$@"
+fi
+
+# taskset 的親和性會被 fork/exec 繼承 —— 包含 paru 內部呼叫的 sudo pacman、
+# makepkg 生出的 gcc/rustc,所以只要包住最外層就涵蓋整個升級流程。
+#
+# 不用 nice:本機跑著 ananicy-cpp,它的 bash 規則(00-default/Terminals & Shells/
+# bash.rules → Doc-View)會在 exec 當下把任何 bash 腳本(makepkg 就是)重設成
+# nice -4,子行程再繼承下去 —— nice -n 19 會被無聲蓋掉。實測 chrt 與 ionice
+# 不受影響(Doc-View 型別沒有 sched/ioclass 欄位),所以改用這兩個:
+#   chrt --idle  → SCHED_IDLE,只在沒別人要 CPU 時才跑
+#   ionice -c3   → idle I/O,不跟遊戲搶載入時的磁碟頻寬
+exec taskset -c "$E_CORES" chrt --idle 0 ionice -c3 "$@"

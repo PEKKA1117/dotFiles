@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+# 唯讀觀察:Steam 啟動到遊戲執行的整個過程中,誰在什麼時候出現、
+# 誰被 gamemode 註冊、親和性何時改變。
+#
+# 完全不做任何修改 —— 不呼叫 gamemoded -r、不呼叫 taskset。
+# 目的是拿真實資料來決定 autoregister 該用什麼觸發點,而不是靠猜。
+#
+# 用法:gamemode-probe --watch [--duration 3600]   持續監控(先跑這個再開 Steam)
+#       gamemode-probe --dump                      當下快照
+#
+# 輸出:~/.local/share/gamemode-probe.tsv
+
+set -uo pipefail
+
+STEAM_ROOT=/home/df/.local/share/Steam
+OUT=/home/df/.local/share/gamemode-probe.tsv
+POLL=${GMP_POLL:-0.5}
+DURATION=0
+
+# ── 遊戲目錄(從 Steam 自己的設定讀,不寫死)────────────────────────
+mapfile -t ROOTS < <(
+    grep -oE '"path"[[:space:]]*"[^"]+"' "$STEAM_ROOT/steamapps/libraryfolders.vdf" 2>/dev/null \
+        | sed 's/.*"path"[[:space:]]*"//; s/"$//' \
+        | while read -r p; do [[ -d "$p/steamapps" ]] && echo "$p/steamapps"; done
+)
+ROOTS+=("$STEAM_ROOT")
+
+now()  { date '+%H:%M:%S.%3N'; }
+attr() { cat "/proc/$1/$2" 2>/dev/null | tr '\0' ' ' | tr -d '\n'; }
+aff()  { awk '/Cpus_allowed_list/{print $2}' "/proc/$1/status" 2>/dev/null; }
+
+# 這個 pid 跟 Steam / 遊戲有關嗎(exe、cwd、cmdline 任一落在相關目錄下)
+related() {
+    local pid=$1 exe cwd cmd r
+    exe=$(readlink -f "/proc/$pid/exe" 2>/dev/null)
+    cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null)
+    cmd=$(attr "$pid" cmdline)
+    for r in "${ROOTS[@]}"; do
+        [[ "$exe" == "$r"/* || "$cwd" == "$r"/* || "$cmd" == *"$r"* ]] && return 0
+    done
+    [[ "$cmd" == *"SteamLaunch AppId="* ]] && return 0
+    return 1
+}
+
+# gamemode 目前註冊了哪些 pid(一次 D-Bus 呼叫,不要每個 pid 各問一次)
+gm_clients() {
+    busctl --user call com.feralinteractive.GameMode /com/feralinteractive/GameMode \
+        com.feralinteractive.GameMode ListGames 2>/dev/null \
+        | grep -oE '[0-9]+ "/com/feralinteractive/GameMode/Games/' \
+        | grep -oE '^[0-9]+'
+}
+
+emit() { printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$@" >> "$OUT"; }
+
+dump_one() {
+    local pid=$1 event=$2
+    emit "$(now)" "$event" "$pid" "$(awk '{print $4}' /proc/$pid/stat 2>/dev/null)" \
+        "$(attr "$pid" comm)" "$(aff "$pid")" "${GM:-?}" \
+        "$(readlink -f /proc/$pid/exe 2>/dev/null)" \
+        "$(attr "$pid" cmdline | cut -c1-300)"
+}
+
+case "${1:-}" in
+--dump)
+    echo "=== 當下與 Steam/遊戲相關的行程 ==="
+    mapfile -t clients < <(gm_clients)
+    for pid in /proc/[0-9]*; do
+        pid=${pid##*/}
+        related "$pid" || continue
+        GM=no; for c in "${clients[@]}"; do [[ "$c" == "$pid" ]] && GM=YES; done
+        printf '  pid=%-8s ppid=%-8s aff=%-6s gm=%-3s %-24s %s\n' \
+            "$pid" "$(awk '{print $4}' /proc/$pid/stat 2>/dev/null)" \
+            "$(aff "$pid")" "$GM" "$(attr "$pid" comm)" \
+            "$(readlink -f /proc/$pid/exe 2>/dev/null)"
+    done
+    echo "gamemode: $(gamemoded -s)  ClientCount=${#clients[@]}"
+    ;;
+--watch)
+    [[ "${2:-}" == "--duration" ]] && DURATION=${3:-0}
+    printf 'TIME\tEVENT\tPID\tPPID\tCOMM\tAFF\tGM\tEXE\tCMDLINE\n' > "$OUT"
+    declare -A SEEN AFFOLD GMOLD
+    start=$SECONDS
+    echo "監控中 → $OUT"
+    echo "現在可以開 Steam 了。Ctrl-C 或等 ${DURATION}s 結束。"
+    while :; do
+        (( DURATION > 0 && SECONDS - start >= DURATION )) && break
+        mapfile -t clients < <(gm_clients)
+        declare -A ISCLIENT=(); for c in "${clients[@]}"; do ISCLIENT[$c]=1; done
+
+        for pid in /proc/[0-9]*; do
+            pid=${pid##*/}
+            [[ -d /proc/$pid ]] || continue
+            # 已追蹤的行程即使 related 變了也繼續追
+            if [[ -z "${SEEN[$pid]:-}" ]]; then
+                related "$pid" || continue
+                SEEN[$pid]=1
+                GM=$([[ -n "${ISCLIENT[$pid]:-}" ]] && echo YES || echo no)
+                AFFOLD[$pid]=$(aff "$pid"); GMOLD[$pid]=$GM
+                dump_one "$pid" NEW
+                continue
+            fi
+            a=$(aff "$pid"); g=$([[ -n "${ISCLIENT[$pid]:-}" ]] && echo YES || echo no)
+            if [[ "$a" != "${AFFOLD[$pid]}" ]]; then
+                GM=$g; dump_one "$pid" "AFF:${AFFOLD[$pid]}→$a"; AFFOLD[$pid]=$a
+            fi
+            if [[ "$g" != "${GMOLD[$pid]}" ]]; then
+                GM=$g; dump_one "$pid" "GM:${GMOLD[$pid]}→$g"; GMOLD[$pid]=$g
+            fi
+        done
+        # 已消失的行程
+        for pid in "${!SEEN[@]}"; do
+            [[ -d /proc/$pid ]] && continue
+            GM=-; emit "$(now)" EXIT "$pid" - - - - - -
+            unset "SEEN[$pid]" "AFFOLD[$pid]" "GMOLD[$pid]"
+        done
+        sleep "$POLL"
+    done
+    echo "結束,共 $(( $(wc -l < "$OUT") - 1 )) 筆事件"
+    ;;
+*)
+    sed -n '2,12p' "$0"; exit 2 ;;
+esac

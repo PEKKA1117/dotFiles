@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# 離座省電切換:away 降 CPU 功耗並關副螢幕,back 全部還原
+#
+# 用法:power-mode away | back | toggle | status | reapply
+#
+# 背景:開機時 performance-tweaks 的 tmpfiles 把 governor/EPP 釘在 performance,
+# 閒置也維持高時脈。離座時 CalDAV/Sunshine/VPN 必須持續對外,所以不能 suspend,
+# 只能降 CPU 策略。governor 透過 gamemode 的 cpugovctl 切換(gamemode 群組的
+# polkit 規則免密碼);intel_pstate 切到 powersave 時 EPP 會自動變 balance_performance。
+#
+# 狀態檔放在 $XDG_RUNTIME_DIR:重開機/登出就消失,與 tmpfiles 的開機預設一致,
+# 不會留下過期的 away 狀態。
+#
+# DP-3 不在這裡處理:燈條吃 DP-3 的 USB 供電,DPMS 待機關不掉,一律手動關電源。
+
+set -uo pipefail
+
+CPUGOVCTL=/usr/lib/gamemode/cpugovctl
+SECONDARY=HDMI-A-1
+STATE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/power-mode"
+
+current_state() {
+    cat "$STATE" 2>/dev/null || echo back
+}
+
+set_governor() {
+    pkexec "$CPUGOVCTL" set "$1" </dev/null
+}
+
+# 從 gamemode hook 呼叫時可能拿不到 SWAYSOCK,找不到 sway 就略過螢幕操作
+sway_output() {
+    if [[ -z "${SWAYSOCK:-}" ]]; then
+        SWAYSOCK=$(ls /run/user/"$(id -u)"/sway-ipc.*.sock 2>/dev/null | head -n1)
+        export SWAYSOCK
+    fi
+    [[ -n "$SWAYSOCK" ]] && swaymsg -q output "$SECONDARY" power "$1"
+}
+
+notify() {
+    notify-send -a power-mode -t 2000 "$1" 2>/dev/null || true
+}
+
+do_away() {
+    set_governor powersave
+    sway_output off
+    echo away > "$STATE"
+    notify "離座省電:CPU powersave,$SECONDARY 已關"
+}
+
+do_back() {
+    set_governor performance
+    sway_output on
+    echo back > "$STATE"
+    notify "已還原:CPU performance"
+}
+
+case "${1:-status}" in
+    away)   do_away ;;
+    back)   do_back ;;
+    toggle) [[ $(current_state) == away ]] && do_back || do_away ;;
+    # 只依狀態重設 governor,不動螢幕也不跳通知:給 gamemode 結束 hook 用,
+    # 因為 gamemode 離開時會把 governor 還原成「進入當下」的值,可能與目前狀態不符
+    reapply)
+        if [[ $(current_state) == away ]]; then
+            set_governor powersave
+        else
+            set_governor performance
+        fi
+        ;;
+    status)
+        printf 'mode=%s governor=%s epp=%s\n' "$(current_state)" \
+            "$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)" \
+            "$(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference)"
+        ;;
+    *) echo "用法:$(basename "$0") away|back|toggle|status|reapply" >&2; exit 2 ;;
+esac
