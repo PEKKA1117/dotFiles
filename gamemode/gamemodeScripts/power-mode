@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 離座省電切換:away 降 CPU 功耗並關副螢幕,back 全部還原
+# 離座省電切換:away 降 CPU 功耗並關掉所有螢幕,back 全部還原
 #
 # 用法:power-mode away | back | toggle | status | reapply
 #
@@ -11,12 +11,12 @@
 # 狀態檔放在 $XDG_RUNTIME_DIR:重開機/登出就消失,與 tmpfiles 的開機預設一致,
 # 不會留下過期的 away 狀態。
 #
-# DP-3 不在這裡處理:燈條吃 DP-3 的 USB 供電,DPMS 待機關不掉,一律手動關電源。
+# 燈條吃 DP-3 的 USB 供電,DPMS 待機關不掉,燈條要另外手動關。
 
 set -uo pipefail
 
 CPUGOVCTL=/usr/lib/gamemode/cpugovctl
-SECONDARY=HDMI-A-1
+OUTPUTS=(DP-3 HDMI-A-1)
 STATE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/power-mode"
 
 current_state() {
@@ -33,7 +33,11 @@ sway_output() {
         SWAYSOCK=$(ls /run/user/"$(id -u)"/sway-ipc.*.sock 2>/dev/null | head -n1)
         export SWAYSOCK
     fi
-    [[ -n "$SWAYSOCK" ]] && swaymsg -q output "$SECONDARY" power "$1"
+    [[ -n "$SWAYSOCK" ]] || return
+    local out
+    for out in "${OUTPUTS[@]}"; do
+        swaymsg -q output "$out" power "$1"
+    done
 }
 
 notify() {
@@ -44,7 +48,7 @@ do_away() {
     set_governor powersave
     sway_output off
     echo away > "$STATE"
-    notify "離座省電:CPU powersave,$SECONDARY 已關"
+    notify "離座省電:CPU powersave,螢幕已關"
 }
 
 do_back() {
