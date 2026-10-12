@@ -5,9 +5,14 @@ show_hidden = true
 image = [
 	{ run = 'satty -f %s', orphan = true, desc = "Open with satty" },
 ]
+pdf = [
+	{ run = 'zathura %s', orphan = true, desc = "Open with zathura" },
+]
 
 [open]
 prepend_rules = [
 	{ mime = "image/*", use = "image" },
+	{ mime = "application/pdf", use = "pdf" },
+	{ url = "*.pdf", use = "pdf" },
 ]
 

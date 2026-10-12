@@ -18,6 +18,7 @@ x-scheme-handler/tidal=tidalt.desktop
 text/html=vivaldi-snapshot.desktop
 x-scheme-handler/about=vivaldi-snapshot.desktop
 x-scheme-handler/unknown=vivaldi-snapshot.desktop
+application/pdf=org.pwmt.zathura-pdf-poppler.desktop
 
 [Added Associations]
 application/x-bat=nvim.desktop;
