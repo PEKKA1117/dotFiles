@@ -18,6 +18,7 @@ This is a **Wayland-based Linux desktop environment configuration repository** f
 ```
 dotFiles/
 ├── MangoHud/          # GPU/system performance overlay configuration
+├── bin/               # Personal commands, symlinked into ~/.local/bin by bin/link.sh
 ├── bottom/            # Terminal system resource monitor (btm)
 ├── foot/              # GPU-accelerated Wayland terminal emulator
 ├── fuzzel/            # Wayland application launcher/menu
@@ -201,6 +202,31 @@ Common patterns across the configuration:
 | `swayfader.py` | Window transparency animations (i3ipc) |
 | `hidpi_1.5.sh` | HiDPI scaling adjustment |
 | `import-gsettings` | GTK settings importer |
+
+### Personal commands (`bin/` → `~/.local/bin`)
+
+Hand-written commands that live on `PATH` are stored in `bin/`. `~/.local/bin`
+only holds relative symlinks back to them (`../../.config/bin/<name>`), so
+editing the file in the repo edits the command, and systemd units that call
+`%h/.local/bin/<name>` keep working.
+
+**Agents: never create or edit a script directly in `~/.local/bin`.** To add a
+command:
+1. Write it to `bin/<name>` with a shebang and `chmod +x`.
+2. Run `~/.config/bin/link.sh`.
+3. Check that it printed `已連結 <name> -> ../../.config/bin/<name>`.
+
+`link.sh` is idempotent and safe to re-run. It links every executable in `bin/`
+except itself, replaces an identical stale copy with a link, and refuses (prints
+`略過 …`) when the target is a different regular file or a symlink pointing
+elsewhere — resolve those by hand, don't delete blindly. It also removes
+dangling links that point into `bin/`, so after renaming or deleting a script
+just re-run it. If you find a hand-written script sitting as a regular file in
+`~/.local/bin`, `mv` it into `bin/` and run `link.sh`.
+
+Not managed here: uv/pipx entry points (`claude-swap`, `cswap`, `kanban-tui`,
+`ktui`), the third-party `nightlight-linux-amd64` binary, and `ecore`, which is
+linked to `gamemode/gamemodeScripts/ecore`.
 
 ## Development Workflows
 

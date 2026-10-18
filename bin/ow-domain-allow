@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+# OW2 場次期間,讓指定網域繞過 DBD 用的 EC2 黑洞(1215 條 unreachable)
+#
+# ── 背景 ──────────────────────────────────────────────────────────────
+# 為了把 DBD 鎖在日本服,除了 JP / us-east-1 以外的 EC2 全被 nmcli 黑洞。
+# 副作用:Blizzard 的 oauth / account / shop 跑在首爾與 us-west-2 的 AWS ALB 上,
+# OW2 商店會一直轉圈。ALB 的 IP 約十天輪換一次,手動釘 /32 撐不久。
+#
+# ── 做法 ──────────────────────────────────────────────────────────────
+# 1. 用 Steam reaper(cmdline 帶 AppId=2357570)當場次錨點,存在 = OW 在跑
+# 2. 場次中每 RESOLVE_EVERY 秒解析一次網域清單,落在黑洞裡的 IP 加 /32 直連路由
+# 3. 場次結束時全部撤掉,黑洞恢復完整
+#
+# 路由用 `nmcli device modify`:只改執行期狀態、不寫進 profile、polkit 放行免 sudo。
+# 生效是非同步的(約 200ms),所以加完不能馬上用 `ip route get` 驗證。
+# 場次中加過的 IP 不會因為 DNS 不再回傳就撤掉 —— 既有連線可能還在用。
+#
+# 用法:ow-domain-allow          常駐(systemd user unit)
+#       ow-domain-allow --status 列出目前放行的 IP
+#       ow-domain-allow --clean  手動撤掉所有放行
+#       ow-domain-allow --detect 只檢查 OW 場次是否進行中
+#
+# 多實例:用 OWDA_NAME / OWDA_APPID 換錨點遊戲,網域清單、state、log 會依 NAME 分開
+# (例如 dbd-twitch-allow.service:DBD 場次中放行 Twitch)
+
+set -uo pipefail
+
+NAME=${OWDA_NAME:-ow-domain-allow}
+APPID=${OWDA_APPID:-2357570}
+DEV=enp6s0
+GW=172.16.0.1
+DOMAINS=${XDG_CONFIG_HOME:-$HOME/.config}/$NAME/domains.txt
+STATE=${XDG_RUNTIME_DIR:-/run/user/$UID}/$NAME.ips
+LOG=$HOME/.local/share/$NAME.log
+POLL=${OWDA_POLL:-2}
+RESOLVE_EVERY=${OWDA_RESOLVE_EVERY:-20}
+# gw  = 直連主路由器(OW:分流白名單本來就不走 VPN)
+# vpn = throw 路由,跳出 main 表交給 Proton 的路由表,維持 VPN 出口
+#       (Twitch:廣告依 playlist 請求的來源國家插播,直連台灣會多出廣告)
+VIA=${OWDA_VIA:-gw}
+
+log() { echo "$(date '+%F %T') $*" >> "$LOG"; }
+
+# 跟 gamemode-autoregister 同一套:先用 comm 粗篩(bash 內建讀檔不 fork),
+# 再驗 exe 檔名,避免 cmdline 含這串字的其他行程自我命中
+ow_running() {
+    # 測試用:旗標檔存在就當作場次進行中(不必生假 reaper 去驚動 gamemode-autoregister)
+    [[ -n "${OWDA_FORCE:-}" ]] && { [[ -e "$OWDA_FORCE" ]]; return; }
+    local pid comm exe cmd
+    for pid in /proc/[0-9]*; do
+        pid=${pid##*/}
+        { comm=$(< "/proc/$pid/comm"); } 2>/dev/null || continue
+        [[ "$comm" == reaper ]] || continue
+        exe=$(readlink "/proc/$pid/exe" 2>/dev/null) || continue
+        [[ "${exe##*/}" == reaper ]] || continue
+        { cmd=$(< "/proc/$pid/cmdline"); } 2>/dev/null || continue
+        # NUL 被吃掉後 AppId 會跟下一個參數黏在一起,所以後面接非數字才算結尾
+        [[ "$cmd" =~ AppId=${APPID}([^0-9]|$) ]] && return 0
+    done
+    return 1
+}
+
+# 已放行的 IP(state 檔是唯一依據,profile 裡的永久路由不歸本腳本管)
+added_ips() { [[ -s "$STATE" ]] && sort -u "$STATE"; }
+
+# 一次 modify 就是一次 reapply,所以整批組成一個參數
+# 加與撤必須用同一個格式,改 VIA 前要先停掉服務讓它用舊格式撤乾淨
+route_tail() { [[ "$VIA" == vpn ]] && echo "type=throw" || echo "$GW"; }
+
+nm_routes() {  # $1=+/- $2...=IP
+    local op=$1; shift
+    (( $# )) || return 0
+    local arg ip
+    arg=$(for ip in "$@"; do printf '%s/32 %s,' "$ip" "$(route_tail)"; done)
+    nmcli device modify "$DEV" "${op}ipv4.routes" "${arg%,}" >/dev/null 2>&1
+}
+
+blocked() {  # 落在 unreachable 黑洞 → ip route get 直接失敗
+    ! ip route get "$1" >/dev/null 2>&1
+}
+
+resolve_and_allow() {
+    local d ip new=()
+    local -A have=()
+    for ip in $(added_ips); do have[$ip]=1; done
+    while read -r d; do
+        d=${d%%#*}; d=${d//[[:space:]]/}
+        [[ -n "$d" ]] || continue
+        for ip in $(getent ahostsv4 "$d" | awk '{print $1}' | sort -u); do
+            [[ -n "${have[$ip]:-}" ]] && continue
+            blocked "$ip" || continue
+            have[$ip]=1
+            new+=("$ip")
+            log "放行 $d -> $ip"
+        done
+    done < "$DOMAINS"
+    if (( ${#new[@]} )); then
+        if nm_routes + "${new[@]}"; then
+            printf '%s\n' "${new[@]}" >> "$STATE"
+        else
+            log "nmcli 加路由失敗: ${new[*]}"
+        fi
+    fi
+}
+
+# 有人 `nmcli device reapply`(例如改白名單)會把執行期路由洗掉,場次中要補回
+heal() {
+    local ip lost=()
+    for ip in $(added_ips); do
+        if [[ "$VIA" == vpn ]]; then
+            ip route show type throw "$ip/32" | grep -q . || lost+=("$ip")
+        else
+            ip route show "$ip/32" | grep -q "via $GW" || lost+=("$ip")
+        fi
+    done
+    (( ${#lost[@]} )) && { log "路由被洗掉,補回 ${lost[*]}"; nm_routes + "${lost[@]}"; }
+}
+
+clean() {
+    local ips ip
+    mapfile -t ips < <(added_ips)
+    if (( ${#ips[@]} )); then
+        # 已被 reapply 洗掉的那幾條 -ipv4.routes 會整批失敗,失敗就逐條刪
+        nm_routes - "${ips[@]}" || for ip in "${ips[@]}"; do nm_routes - "$ip"; done
+        log "撤銷 ${#ips[@]} 條: ${ips[*]}"
+    fi
+    rm -f "$STATE"
+}
+
+case "${1:-}" in
+    --status) added_ips; exit 0 ;;
+    --clean)  clean; exit 0 ;;
+    --detect) ow_running && echo running || echo idle; exit 0 ;;
+esac
+
+trap 'clean; exit 0' TERM INT
+
+# 上次異常結束留下的放行先撤掉(OW 還在跑的話下一輪會馬上補回)
+clean
+log "啟動,監看 AppId=$APPID"
+
+active=0 last=0
+while :; do
+    if ow_running; then
+        now=$(date +%s)
+        if (( !active )); then
+            active=1 last=0
+            log "場次開始(AppId=$APPID)"
+        fi
+        if (( now - last >= RESOLVE_EVERY )); then
+            heal
+            resolve_and_allow
+            last=$now
+        fi
+    elif (( active )); then
+        active=0
+        log "場次結束(AppId=$APPID)"
+        clean
+    fi
+    sleep "$POLL"
+done

@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# 手動解除核心隔離 —— 逃生門,只在確定沒在玩遊戲時使用
+#
+# gamemode 只在「最後一個 client 註銷」時才發 end 事件。理論上 Steam/proton 的外殼
+# (srt-bwrap、reaper)可能在遊戲退出後殘留不死,讓 end 永遠不來、背景程式卡在
+# E-core。但要注意:「ClientCount > 0 但我看不到遊戲行程」絕大多數情況代表
+# 遊戲真的在跑,而不是殘留 —— 遊戲跑在 pressure-vessel 容器裡,行程名稱是
+# srt-bwrap / reaper / wine 之類,用 pgrep 找遊戲名字是找不到的。
+#
+# 所以本腳本只列出 client 讓你自己判斷,絕不自動終止。看 ListGames 印出的
+# cmdline 認遊戲(裡面有 AppId 與 .exe 路徑),不確定就別動。
+#
+# 用法:unpin-cores          還原所有行程到全核心,並列出仍註冊中的 gamemode client
+#       unpin-cores --kill   終止那些 client —— 會直接殺掉正在玩的遊戲,務必先確認
+
+set -uo pipefail
+source "$HOME/.config/gamemode/gamemodeScripts/gamemode-cpu-topology.sh"
+detect_topology
+[[ -n "${ALL_CORES:-}" ]] || ALL_CORES="0-$(( $(nproc --all) - 1 ))"
+
+restored=0
+for name in "${BG_PROCS[@]}"; do
+    while read -r pid; do
+        [[ -n "$pid" ]] || continue
+        taskset -acp "$ALL_CORES" "$pid" &>/dev/null && (( restored++ ))
+    done < <(pgrep -x "$name" 2>/dev/null)
+done
+builds=$(retask_ecore_trees "$ALL_CORES")
+
+echo "已還原 $restored 個背景行程 + $builds 個編譯行程至 $ALL_CORES"
+echo "$(date '+%F %T') [manual] 已還原 $restored 個行程至 $ALL_CORES(其中編譯樹 $builds 個)" \
+    >> /home/df/.local/share/gamemode-cpu.log
+
+# 列出仍註冊中的 client。ListGames 回傳 a(io):pid 與 D-Bus 物件路徑交錯
+mapfile -t clients < <(
+    busctl --user call com.feralinteractive.GameMode /com/feralinteractive/GameMode \
+        com.feralinteractive.GameMode ListGames 2>/dev/null \
+        | grep -oE '[0-9]+ "/com/feralinteractive/GameMode/Games/' \
+        | grep -oE '^[0-9]+'
+)
+
+if (( ${#clients[@]} == 0 )); then
+    echo "gamemode 目前沒有註冊中的 client,狀態乾淨。"
+    exit 0
+fi
+
+echo
+echo "仍註冊中的 gamemode client(${#clients[@]} 個):"
+for p in "${clients[@]}"; do
+    if [[ -d /proc/$p ]]; then
+        # 只印 comm 會看到 srt-bwrap / reaper 這種容器外殼,認不出是哪款遊戲。
+        # 遊戲身分藏在 cmdline 裡的 AppId 與 .exe 路徑,一定要一起印出來。
+        cmd=$(tr '\0' ' ' < "/proc/$p/cmdline" 2>/dev/null)
+        appid=$(grep -oE 'AppId=[0-9]+' <<< "$cmd" | head -1)
+        exe=$(grep -oE '[^ ]+\.exe' <<< "$cmd" | tail -1)
+        printf '  pid=%-8s 已存活 %-10s %s\n' \
+            "$p" "$(ps -o etime= -p "$p" | tr -d ' ')" "$(ps -o comm= -p "$p")"
+        [[ -n "$appid$exe" ]] && printf '    └─ %s %s\n' "${appid:-}" "${exe:-}"
+    else
+        printf '  pid=%-8s (行程已不存在,殭屍註冊)\n' "$p"
+    fi
+done
+
+if [[ "${1:-}" == "--kill" ]]; then
+    echo
+    for p in "${clients[@]}"; do
+        [[ -d /proc/$p ]] || continue
+        kill -TERM "$p" 2>/dev/null && echo "  已送出 SIGTERM 給 pid=$p"
+    done
+    echo "若 3 秒後 gamemoded -s 仍是 active,再用 kill -9。"
+else
+    echo
+    echo "上面若是你正在玩的遊戲,什麼都別做。確定是殘留才用 'unpin-cores --kill'(會殺掉該行程)。"
+fi

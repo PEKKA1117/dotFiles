@@ -1,0 +1,10 @@
+#!/bin/bash
+# Steam with Cloudflare WARP proxy for faster downloads
+# 確保 WARP 以 proxy 模式運行，然後啟動 Steam
+
+# 啟動 WARP proxy 模式
+warp-cli mode proxy 2>/dev/null
+warp-cli connect 2>/dev/null
+
+# 透過 WARP SOCKS5 proxy 啟動 Steam，並開啟 console
+exec env ALL_PROXY=socks5://127.0.0.1:40000 /usr/bin/steam -console "$@"

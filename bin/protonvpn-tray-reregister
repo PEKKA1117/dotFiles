@@ -1,0 +1,53 @@
+#!/usr/bin/python3
+"""監聽 StatusNotifierWatcher,watcher 重啟(例如 waybar 重啟)後,
+替 protonvpn-app 的 SNI item 重新註冊。
+
+protonvpn-app 只在啟動時註冊一次,不會處理 watcher 換手,
+所以 waybar 重啟後托盤圖示會消失。
+"""
+import dbus
+import dbus.mainloop.glib
+from gi.repository import GLib
+
+WATCHER = "org.kde.StatusNotifierWatcher"
+WATCHER_PATH = "/StatusNotifierWatcher"
+ITEM_PREFIX = "org.kde.StatusNotifierItem-proton.vpn.app.gtk-"
+
+
+def reregister(bus):
+    """對目前的 watcher 補註冊還沒登記的 protonvpn item"""
+    try:
+        watcher = bus.get_object(WATCHER, WATCHER_PATH)
+        props = dbus.Interface(watcher, "org.freedesktop.DBus.Properties")
+        registered = [
+            str(x) for x in props.Get(WATCHER, "RegisteredStatusNotifierItems")
+        ]
+    except dbus.exceptions.DBusException:
+        return
+
+    for name in bus.list_names():
+        if not str(name).startswith(ITEM_PREFIX):
+            continue
+        # 已登記就略過,避免 waybar 出現重複圖示
+        if any(r.startswith(str(name)) for r in registered):
+            continue
+        watcher.RegisterStatusNotifierItem(str(name), dbus_interface=WATCHER)
+        print(f"已重新註冊 {name}", flush=True)
+
+
+def main():
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    bus = dbus.SessionBus()
+
+    def on_owner_changed(new_owner):
+        if new_owner:
+            # watcher 剛上線,等它初始化完再註冊
+            GLib.timeout_add_seconds(2, lambda: reregister(bus) and False)
+
+    # 啟動時若 watcher 已存在也會觸發一次回呼
+    bus.watch_name_owner(WATCHER, on_owner_changed)
+    GLib.MainLoop().run()
+
+
+if __name__ == "__main__":
+    main()

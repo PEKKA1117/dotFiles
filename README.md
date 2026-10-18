@@ -10,15 +10,18 @@ My `~/.config` on Garuda Linux (Arch): Sway (SwayFX) on Wayland, Tokyo Night eve
 
 ### How the repo works
 
-The repo **is** `~/.config`. Nothing is symlinked: `.gitignore` keeps out browser
-profiles, caches, credentials and app state, and everything else that is tracked
-lives where the app expects it. `~/.zshrc` is a symlink to `zsh/.zshrc`.
+The repo **is** `~/.config`. `.gitignore` keeps out browser profiles, caches,
+credentials and app state, and everything else that is tracked lives where the
+app expects it. The only symlinks point *out* of the repo: `~/.zshrc` →
+`zsh/.zshrc`, and every command in `bin/` → `~/.local/bin` (created by
+`bin/link.sh`, safe to re-run).
 
 To use it on a fresh machine, back up your own `~/.config` first, then:
 
 ```sh
 git clone git@github.com:PEKKA1117/dotFiles.git ~/.config
 ln -s ~/.config/zsh/.zshrc ~/.zshrc
+~/.config/bin/link.sh
 ```
 
 Expect to edit hardware-specific bits (outputs, audio devices, workspaces) before it is usable.
@@ -109,13 +112,14 @@ markdown rendering, Claude Code.
 
 ### 運作方式
 
-這個 repo **就是** `~/.config`,沒有任何 symlink:`.gitignore` 排除瀏覽器設定檔、快取、憑證與應用程式狀態,其餘追蹤的檔案都放在應用程式預期的位置。`~/.zshrc` 是指向 `zsh/.zshrc` 的 symlink。
+這個 repo **就是** `~/.config`:`.gitignore` 排除瀏覽器設定檔、快取、憑證與應用程式狀態,其餘追蹤的檔案都放在應用程式預期的位置。symlink 只有從 repo 往外指的:`~/.zshrc` 指向 `zsh/.zshrc`,以及 `bin/` 裡的每個指令掛到 `~/.local/bin`(由 `bin/link.sh` 建立,可重複執行)。
 
 在新機器上使用前請先備份自己的 `~/.config`,接著:
 
 ```sh
 git clone git@github.com:PEKKA1117/dotFiles.git ~/.config
 ln -s ~/.config/zsh/.zshrc ~/.zshrc
+~/.config/bin/link.sh
 ```
 
 螢幕、音效裝置、工作區等跟硬體綁定的設定需要自行修改。

@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# DBD 場次期間才啟用 EC2 黑洞(把 DBD 鎖在日本服)
+#
+# ── 背景 ──────────────────────────────────────────────────────────────
+# DBD 用 AWS GameLift,在登入頁量各區延遲來選區;香港外掛多,所以把 JP 與
+# us-east-1(DBD 後端)以外的 EC2 全部 unreachable,逼它配到東京。
+# 原本這 1215 條寫死在 NM profile 裡常駐,副作用是所有託管在其他區 EC2 的服務
+# 全部 No route to host —— 例如 Twitch 的 playlist(新加坡)與聊天室(us-west-2)
+# 直接造成 Error #2000,OW2 商店轉圈也是同一個原因。
+#
+# ── 做法 ──────────────────────────────────────────────────────────────
+# 1. 用 Steam reaper(cmdline 帶 AppId=381210)當場次錨點,存在 = DBD 在跑
+# 2. 場次開始時用 `nmcli device modify` 一次加上整份清單(只改執行期、免 sudo)
+# 3. 場次結束時整批撤掉;profile 裡不再有任何 unreachable,重開機自然是乾淨的
+#
+# DBD 從啟動到登入頁量延遲要幾十秒,POLL=2s 綽綽有餘。
+# 有人 `nmcli device reapply` 會把執行期路由洗掉,場次中每 HEAL_EVERY 秒檢查補回。
+#
+# 用法:dbd-ec2-blackhole          常駐(systemd user unit)
+#       dbd-ec2-blackhole --status 顯示黑洞是否啟用與條數
+#       dbd-ec2-blackhole --on     手動啟用(不管 DBD 是否在跑,下一輪常駐會依場次修正)
+#       dbd-ec2-blackhole --off    手動撤掉
+#       dbd-ec2-blackhole --detect 只檢查 DBD 場次是否進行中
+
+set -uo pipefail
+
+APPID=${DBDB_APPID:-381210}
+DEV=enp6s0
+LIST=${XDG_CONFIG_HOME:-$HOME/.config}/dbd-ec2-blackhole/blocklist.txt
+LOG=$HOME/.local/share/dbd-ec2-blackhole.log
+POLL=${DBDB_POLL:-2}
+HEAL_EVERY=${DBDB_HEAL_EVERY:-20}
+
+log() { echo "$(date '+%F %T') $*" >> "$LOG"; }
+
+# 與 ow-domain-allow 同一套:先用 comm 粗篩,再驗 exe 檔名,最後比 AppId
+dbd_running() {
+    # 測試用:旗標檔存在就當作場次進行中(不必生假 reaper 去驚動 gamemode-autoregister)
+    [[ -n "${DBDB_FORCE:-}" ]] && { [[ -e "$DBDB_FORCE" ]]; return; }
+    local pid comm exe cmd
+    for pid in /proc/[0-9]*; do
+        pid=${pid##*/}
+        { comm=$(< "/proc/$pid/comm"); } 2>/dev/null || continue
+        [[ "$comm" == reaper ]] || continue
+        exe=$(readlink "/proc/$pid/exe" 2>/dev/null) || continue
+        [[ "${exe##*/}" == reaper ]] || continue
+        { cmd=$(< "/proc/$pid/cmdline"); } 2>/dev/null || continue
+        # NUL 被吃掉後 AppId 會跟下一個參數黏在一起,所以後面接非數字才算結尾
+        [[ "$cmd" =~ AppId=${APPID}([^0-9]|$) ]] && return 0
+    done
+    return 1
+}
+
+cidrs() { grep -v '^[[:space:]]*\(#\|$\)' "$LIST"; }
+
+# 整份清單組成一個參數,一次 modify 只觸發一次 reapply
+route_arg() { cidrs | sed 's/$/ type=unreachable/' | paste -sd,; }
+
+# kernel 裡目前的 unreachable 條數(profile 已清空,所以全是本腳本加的)
+live_count() { ip -4 route show type unreachable | wc -l; }
+
+expected=$(cidrs | wc -l)
+
+blackhole_on() {
+    local have; have=$(live_count)
+    (( have >= expected )) && return 0
+    # 只缺一部分(例如清單更新)時先撤乾淨再整批加,避免 +ipv4.routes 撞到重複項
+    (( have > 0 )) && blackhole_off quiet
+    if nmcli device modify "$DEV" +ipv4.routes "$(route_arg)" >/dev/null 2>&1; then
+        log "黑洞啟用 $expected 條"
+    else
+        log "nmcli 加黑洞失敗"
+        return 1
+    fi
+}
+
+blackhole_off() {
+    (( $(live_count) )) || return 0
+    # 部分已被 reapply 洗掉時 -ipv4.routes 會整批失敗;profile 裡沒有黑洞,
+    # 退回 reapply 就等於全撤(ow-domain-allow 的執行期 /32 也會被洗掉,
+    # 但黑洞都撤了它們本來就用不到,OW 場次中它也會自己補)
+    nmcli device modify "$DEV" -ipv4.routes "$(route_arg)" >/dev/null 2>&1 \
+        || nmcli device reapply "$DEV" >/dev/null 2>&1
+    [[ "${1:-}" == quiet ]] || log "黑洞撤銷"
+}
+
+case "${1:-}" in
+    --status)
+        n=$(live_count)
+        (( n )) && echo "on ($n/$expected)" || echo "off"
+        exit 0 ;;
+    --on)     blackhole_on; exit ;;
+    --off)    blackhole_off; exit 0 ;;
+    --detect) dbd_running && echo running || echo idle; exit 0 ;;
+esac
+
+trap 'blackhole_off; exit 0' TERM INT
+
+log "啟動,監看 AppId=$APPID"
+
+active=0 last=0
+while :; do
+    if dbd_running; then
+        now=$(date +%s)
+        if (( !active )); then
+            active=1 last=0
+            log "DBD 場次開始"
+        fi
+        if (( now - last >= HEAL_EVERY )); then
+            blackhole_on
+            last=$now
+        fi
+    elif (( active )) || (( last == 0 )); then
+        # 場次結束,或剛啟動且沒在玩(上次異常結束留下的黑洞)
+        (( active )) && log "DBD 場次結束"
+        active=0 last=-1
+        blackhole_off
+    fi
+    sleep "$POLL"
+done
