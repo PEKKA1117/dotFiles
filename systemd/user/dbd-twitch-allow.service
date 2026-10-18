@@ -1,0 +1,20 @@
+[Unit]
+Description=DBD 場次期間放行 Twitch 網域(繞過 EC2 黑洞)
+Documentation=file:///home/df/.local/bin/ow-domain-allow
+After=dbd-ec2-blackhole.service
+
+[Service]
+Type=simple
+Environment=OWDA_NAME=dbd-twitch-allow OWDA_APPID=381210 OWDA_VIA=vpn
+ExecStart=%h/.local/bin/ow-domain-allow
+# 停止時 SIGTERM → trap 撤掉所有放行
+KillMode=mixed
+Restart=on-failure
+RestartSec=5
+Nice=19
+# ananicy 會把 bash 重設成 nice -4,改用 E-core 隔離(P-core 0-11 留給遊戲)
+CPUAffinity=12-19
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

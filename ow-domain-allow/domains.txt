@@ -1,0 +1,5 @@
+# OW 場次期間要放行(繞過 EC2 黑洞)的網域,一行一個,# 開頭為註解
+# 只有解析結果落在黑洞裡的 IP 才會被加 /32 直連路由
+oauth.battle.net
+account.battle.net
+us.shop.battle.net

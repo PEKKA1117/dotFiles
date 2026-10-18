@@ -1,0 +1,12 @@
+# DBD 場次中放行的 Twitch 網域(落在 EC2 黑洞裡的才會被補 /32)
+# 直播畫質清單:usher 依出口位置指派,東京出口會拿到 aps 系列
+aps11.playlist.ttvnw.net   # 新加坡
+aps12.playlist.ttvnw.net
+aps13.playlist.ttvnw.net
+aps21.playlist.ttvnw.net   # 雪梨
+aps22.playlist.ttvnw.net
+aps23.playlist.ttvnw.net
+# 聊天室(us-west-2)
+irc-ws.chat.twitch.tv
+# 數據回報(擋了不影響播放,放行避免前端一直重試)
+spade.twitch.tv

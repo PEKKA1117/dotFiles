@@ -1,0 +1,18 @@
+[Unit]
+Description=DBD 場次期間啟用 EC2 黑洞(鎖日本服)
+Documentation=file:///home/df/.local/bin/dbd-ec2-blackhole
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/dbd-ec2-blackhole
+# 停止時 SIGTERM → trap 撤掉黑洞
+KillMode=mixed
+Restart=on-failure
+RestartSec=5
+Nice=19
+# ananicy 會把 bash 重設成 nice -4,改用 E-core 隔離(P-core 0-11 留給遊戲)
+CPUAffinity=12-19
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target
