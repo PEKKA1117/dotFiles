@@ -157,3 +157,6 @@ lsfg-vk/conf.toml.old
 mpv/script-opts/memo-history.log
 jamesdsp/irs_favorites
 MusicBrainz/*.synclock
+
+# Obsidian app state (cookies, trust tokens); vaults live elsewhere
+obsidian/
