@@ -1,0 +1,12 @@
+[Unit]
+Description=Re-register protonvpn-app tray icon after StatusNotifierWatcher restarts
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/python3 %h/.local/bin/protonvpn-tray-reregister
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target
