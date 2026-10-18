@@ -11,3 +11,9 @@ desc = "7z 壓縮選取的檔案"
 on   = "<C-g>"
 run  = "shell --block -- lazygit"
 desc = "開啟 lazygit"
+
+# Ctrl+n：用 ripdrag 拖放選取的檔案（沒選取時拖游標所在檔案）;-A 只顯示數量、一次拖全部，-x 拖完自動關閉視窗
+[[mgr.prepend_keymap]]
+on   = "<C-n>"
+run  = 'shell -- ripdrag -x -A %s'
+desc = "ripdrag 拖放檔案"
