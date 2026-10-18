@@ -137,7 +137,7 @@
       "updated": ""
     },
     "exec-if": "which waybar-module-pacman-updates",
-    "exec": "waybar-module-pacman-updates --no-zero-output --interval-seconds 5 --network-interval-seconds 300 --tooltip-align-columns",
+    "exec": "waybar-module-pacman-updates --no-zero-output --interval-seconds 300 --network-interval-seconds 300 --tooltip-align-columns",
     "on-click": "footclient -T waybar_pacseek -e pacseek -ui",
   },
   "custom/pacman": {

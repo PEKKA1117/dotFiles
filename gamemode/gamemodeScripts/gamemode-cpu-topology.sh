@@ -37,7 +37,7 @@ detect_topology() {
 
 # 要趕出 P-core 的背景程式。刻意不含 sway(合成器需低延遲)
 # 與 gamescope/wine/Overwatch(遊戲本身,由 gamemode pin_cores 管理)
-BG_PROCS=(vesktop discord vivaldi-bin chromium spotify claude obs steamwebhelper code Discord)
+BG_PROCS=(vesktop discord vivaldi-bin chromium spotify claude obs steamwebhelper code Discord waybar-module-p)
 
 # ── ecore 行程樹追蹤 ────────────────────────────────────────────────
 # ~/.local/bin/ecore 啟動編譯時會在此目錄登記自己的 pid,好讓遊戲開始/結束時

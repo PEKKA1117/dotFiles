@@ -90,7 +90,7 @@ Comprehensive status bar with modules for:
 | Foot | `foot/foot.ini` | Terminal emulator (Tokyo Night theme, 0.9 opacity) |
 | Fuzzel | `fuzzel/fuzzel.ini` | Application launcher (dmenu mode) |
 | Mako | `mako/config` | Notification daemon |
-| MangoHud | `MangoHud/MangoHud.conf` | GPU overlay for gaming (165 FPS limit) |
+| MangoHud | `MangoHud/MangoHud.conf` | GPU overlay for gaming (157 FPS limit) |
 | Bottom | `bottom/bottom.toml` | System resource monitor |
 | Swayr | `swayr/config.toml` | Window switcher using fuzzel |
 | Yazi | `yazi/` | Terminal file manager |
