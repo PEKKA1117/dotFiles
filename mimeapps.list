@@ -25,3 +25,4 @@ application/x-bat=nvim.desktop;
 image/avif=swayimg.desktop;
 application/zip=xarchiver.desktop;
 image/png=satty.desktop;
+text/x-python3=nvim.desktop;
