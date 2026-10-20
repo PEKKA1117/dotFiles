@@ -64,7 +64,7 @@ exec protonvpn-app
 
 exec ~/.config/sway/scripts/launch_after_vpn.sh steam
 
-# exec ~/.config/sway/scripts/launch_after_vpn.sh /usr/bin/protonmail-bridge --no-window
+exec ~/.config/sway/scripts/launch_after_vpn.sh /usr/bin/protonmail-bridge --no-window
 
 # Wallpaper Engine
 #exec '__GL_THREADED_OPTIMIZATIONS=0 linux-wallpaperengine --screen-root HDMI-A-1  --playlist "Main"'
