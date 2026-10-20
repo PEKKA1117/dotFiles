@@ -77,8 +77,7 @@ LOG.old
 
 # profile-sync-daemon runtime symlinks at repo root
 /chromium
-/google-chrome
-/vivaldi
+/vivaldi-snapshot
 
 # Large or volatile app profiles, wine prefixes and vendored assets
 chromium-backup*/
