@@ -33,8 +33,8 @@ Expect to edit hardware-specific bits (outputs, audio devices, workspaces) befor
 | Desktop | `sway/` (+ `swayfx/`, `scripts/`), `swayr/`, `waybar/`, `mako/`, `fuzzel/`, `wofi/`, `nwg-drawer/`, `gtklock/`, `swappy/`, `azote/`, `xdg-desktop-portal/`, `mimeapps.list` |
 | Theming | `gtk-3.0/`, `gtk-4.0/`, `qt5ct/`, `qt6ct/`, `Kvantum/`, `kdeglobals`, `nwg-look/`, `environment.d/` |
 | Terminal & CLI | `foot/`, `zsh/`, `oh-my-zsh-custom/`, `starship.toml`, `nvim/`, `micro/`, `yazi/`, `lazygit/`, `bottom/`, `htop/`, `git/`, `pacman/`, `pacseek/`, `pamac/` |
-| Audio | `pipewire/`, `wireplumber/`, `easyeffects/`, `jamesdsp/`, `audiopro/`, `spotify-player/`, `spicetify/`, `tidal-player/`, `mpv/`, `vlc/` |
-| Gaming & GPU | `MangoHud/`, `goverlay/`, `vkBasalt/`, `vkSumi/`, `lsfg-vk/`, `lact/`, `leshade/`, `gamemode.ini`, `sunshine/`, `OpenRGB/`, `rivalcfg/` |
+| Audio | `pipewire/`, `wireplumber/`, `easyeffects/`, `jamesdsp/`, `audiopro/`, `spicetify/`, `tidal-player/`, `mpv/` |
+| Gaming & GPU | `MangoHud/`, `goverlay/`, `lact/`, `leshade/`, `gamemode.ini`, `OpenRGB/`, `rivalcfg/` |
 | Services | `systemd/user/` — units plus their `*.wants/` enablement links |
 
 ### Sway
@@ -131,8 +131,8 @@ ln -s ~/.config/zsh/.zshrc ~/.zshrc
 | 桌面 | `sway/`(含 `swayfx/`、`scripts/`)、`swayr/`、`waybar/`、`mako/`、`fuzzel/`、`wofi/`、`nwg-drawer/`、`gtklock/`、`swappy/`、`azote/`、`xdg-desktop-portal/`、`mimeapps.list` |
 | 主題 | `gtk-3.0/`、`gtk-4.0/`、`qt5ct/`、`qt6ct/`、`Kvantum/`、`kdeglobals`、`nwg-look/`、`environment.d/` |
 | 終端與 CLI | `foot/`、`zsh/`、`oh-my-zsh-custom/`、`starship.toml`、`nvim/`、`micro/`、`yazi/`、`lazygit/`、`bottom/`、`htop/`、`git/`、`pacman/`、`pacseek/`、`pamac/` |
-| 音訊 | `pipewire/`、`wireplumber/`、`easyeffects/`、`jamesdsp/`、`audiopro/`、`spotify-player/`、`spicetify/`、`tidal-player/`、`mpv/`、`vlc/` |
-| 遊戲與 GPU | `MangoHud/`、`goverlay/`、`vkBasalt/`、`vkSumi/`、`lsfg-vk/`、`lact/`、`leshade/`、`gamemode.ini`、`sunshine/`、`OpenRGB/`、`rivalcfg/` |
+| 音訊 | `pipewire/`、`wireplumber/`、`easyeffects/`、`jamesdsp/`、`audiopro/`、`spicetify/`、`tidal-player/`、`mpv/` |
+| 遊戲與 GPU | `MangoHud/`、`goverlay/`、`lact/`、`leshade/`、`gamemode.ini`、`OpenRGB/`、`rivalcfg/` |
 | 服務 | `systemd/user/`:unit 檔與 `*.wants/` 啟用連結 |
 
 ### Sway

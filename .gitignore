@@ -140,7 +140,6 @@ calcurse/
 psd/.psd.conf
 goverlay/distro
 goverlay/kernel
-lsfg-vk/conf.toml.old
 mpv/script-opts/memo-history.log
 jamesdsp/irs_favorites
 MusicBrainz/*.synclock
