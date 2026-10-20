@@ -224,9 +224,9 @@ dangling links that point into `bin/`, so after renaming or deleting a script
 just re-run it. If you find a hand-written script sitting as a regular file in
 `~/.local/bin`, `mv` it into `bin/` and run `link.sh`.
 
-Not managed here: uv/pipx entry points (`claude-swap`, `cswap`, `kanban-tui`,
-`ktui`), the third-party `nightlight-linux-amd64` binary, and `ecore`, which is
-linked to `gamemode/gamemodeScripts/ecore`.
+Not managed here: uv entry points (`claude-swap`, `cswap`), the third-party
+`nightlight-linux-amd64` binary, and `ecore`, which is linked to
+`gamemode/gamemodeScripts/ecore`.
 
 ## Development Workflows
 
