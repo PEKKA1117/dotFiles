@@ -36,9 +36,7 @@ falkon/
 
 # Electron apps with large caches
 discord/
-Discord/
 vesktop/
-Proton Mail/
 Netflix/
 Postman/
 clara-verse/
@@ -88,7 +86,6 @@ sone/
 io.github.lullabyX.sone/
 exiled-exchange-2/
 blender/
-garuda-rani/
 garuda-toolbox/
 libreoffice/
 BetterDiscord/
@@ -115,9 +112,7 @@ sunshine/sunshine_state.json
 org.coolercontrol.CoolerControl/
 spotify/
 shopee-session.conf
-nheko/
 .wrangler/
-netlify/
 gh/hosts.yml
 
 # Runtime state, caches and generated files
@@ -129,8 +124,6 @@ gtklock/broadwing_blur.png
 Thunar/accels.scm
 Mousepad/accels.scm
 xfce4/xfconf/
-fcitx/
-ibus/
 fcitx5/conf/cached_layouts
 fcitx5/profile_*
 flutter/
@@ -139,7 +132,6 @@ wireshark/
 QtProject.conf
 QtProject/
 pavucontrol.ini
-fancontrol-gui
 ktorrentrc
 ktorrent_infowidgetrc
 Arena Tracker/
