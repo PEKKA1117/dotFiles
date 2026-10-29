@@ -56,6 +56,8 @@ for_window [class="steam_app_2357570"] move --no-auto-back-and-forth container t
 for_window [class="steam_app_[0-9]+"] move --no-auto-back-and-forth container to workspace $ws3, focus
 for_window [class="steam_app_default"] move --no-auto-back-and-forth container to workspace $ws5, focus
 for_window [class="overwatch\.exe"] move --no-auto-back-and-forth container to workspace $ws3, focus
+# PROTON_ENABLE_WAYLAND=1 的遊戲是原生 Wayland 視窗，沒有 X11 class(steam_app_*)，只能用 app_id(小寫 exe 名)比對
+for_window [app_id="\.exe$"] move --no-auto-back-and-forth container to workspace $ws3, focus
 
 # IDEs
 # When running in native wayland mode
