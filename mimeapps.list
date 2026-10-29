@@ -9,7 +9,7 @@ x-scheme-handler/irc=vivaldi-snapshot.desktop
 x-scheme-handler/https=vivaldi-snapshot.desktop
 x-scheme-handler/http=vivaldi-snapshot.desktop
 x-scheme-handler/jetbrains-gateway=jetbrains-gateway.desktop
-inode/directory=/usr/share/applications/thunar.desktop
+inode/directory=yazi-foot.desktop
 x-scheme-handler/jetbrains=jetbrainsd.desktop
 image/avif=swayimg.desktop
 x-scheme-handler/claude=com.anthropic.Claude.desktop
@@ -19,6 +19,7 @@ text/html=vivaldi-snapshot.desktop
 x-scheme-handler/about=vivaldi-snapshot.desktop
 x-scheme-handler/unknown=vivaldi-snapshot.desktop
 application/pdf=org.pwmt.zathura-pdf-poppler.desktop
+text/markdown=nvim.desktop
 
 [Added Associations]
 application/x-bat=nvim.desktop;
@@ -26,3 +27,4 @@ image/avif=swayimg.desktop;
 application/zip=xarchiver.desktop;
 image/png=satty.desktop;
 text/x-python3=nvim.desktop;
+text/markdown=nvim.desktop;

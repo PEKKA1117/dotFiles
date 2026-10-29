@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# 在新的 footclient 視窗用 yazi 開啟目錄(給 xdg-open inode/directory 用)
+#
+# 平常走 sway 啟動的 foot --server;server socket 不在時退回獨立的 foot。
+# 不用 `footclient || foot`:footclient 會回傳 yazi 的 exit code,
+# yazi 非零退出時會誤開第二個視窗。
+#
+# 用法:yazi-foot [目錄]
+
+sock=${XDG_RUNTIME_DIR:-/run/user/$UID}/foot-${WAYLAND_DISPLAY:-wayland-0}.sock
+
+if [[ -S $sock ]]; then
+    exec footclient --app-id=yazi -- yazi "$@"
+else
+    exec foot --app-id=yazi -- yazi "$@"
+fi
