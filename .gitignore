@@ -146,3 +146,7 @@ MusicBrainz/*.synclock
 
 # Obsidian app state (cookies, trust tokens); vaults live elsewhere
 obsidian/
+
+# Input method daemons runtime bus addresses
+fcitx/dbus/
+ibus/bus/
