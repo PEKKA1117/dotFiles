@@ -57,9 +57,7 @@ exec python3 ~/.config/sway/scripts/swayfader.py
 # a2ln notification
 exec a2ln
 
-exec protonvpn-app
-
-# Gate network apps behind ProtonVPN: launch only after the VPN is connected
+# Gate network apps behind Cloudflare WARP: launch only after the VPN is connected
 #exec ~/.config/sway/scripts/launch_after_vpn.sh sone
 
 exec ~/.config/sway/scripts/launch_after_vpn.sh steam

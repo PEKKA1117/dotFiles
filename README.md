@@ -48,7 +48,7 @@ Expect to edit hardware-specific bits (outputs, audio devices, workspaces) befor
 | `config.d/workspace` | Workspace ↔ output mapping and `$mod+1–0` bindings |
 | `config.d/output` | DP-3 3840×2160 (VRR off), HDMI-A-1 1920×1080 |
 | `config.d/application_defaults` | Floating rules and workspace assignments |
-| `config.d/autostart_applications` | Session startup; network apps wait for ProtonVPN via `scripts/launch_after_vpn.sh` |
+| `config.d/autostart_applications` | Session startup; network apps wait for Cloudflare WARP via `scripts/launch_after_vpn.sh` |
 | `swayfx/swayfx` | Corner radius, blur, shadows, inactive dimming |
 
 Workspaces 1, 3, 5 live on DP-3; 2, 4, 8, 9, 10 on HDMI-A-1; 6 and 7 go wherever focus is.
@@ -146,7 +146,7 @@ ln -s ~/.config/zsh/.zshrc ~/.zshrc
 | `config.d/workspace` | 工作區與螢幕對應、`$mod+1–0` |
 | `config.d/output` | DP-3 3840×2160(VRR 關閉)、HDMI-A-1 1920×1080 |
 | `config.d/application_defaults` | 浮動視窗規則與工作區指派 |
-| `config.d/autostart_applications` | 開機啟動;需要網路的程式透過 `scripts/launch_after_vpn.sh` 等 ProtonVPN 連上才啟動 |
+| `config.d/autostart_applications` | 開機啟動;需要網路的程式透過 `scripts/launch_after_vpn.sh` 等 Cloudflare WARP 連上才啟動 |
 | `swayfx/swayfx` | 圓角、模糊、陰影、非焦點視窗變暗 |
 
 工作區 1、3、5 在 DP-3;2、4、8、9、10 在 HDMI-A-1;6、7 跟著目前焦點的螢幕。
