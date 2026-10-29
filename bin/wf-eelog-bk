@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Warframe EE.log 備份包裝器 —— 放進 Steam 啟動參數,包住整個遊戲場次
+#
+# EE.log 每次啟動都會被覆寫、沒有 .bak。凍結 → 強制結束 → 重開,上一場的證據就沒了。
+# 本腳本在兩個時間點備份:
+#   1. 遊戲樹結束後(reaper 收掉、正常退出、被砍都算):立刻存一份
+#   2. 下次啟動前:再檢查一次上一場的 EE.log —— 萬一包裝器本身被 SIGKILL、
+#      第 1 步沒跑到,這裡補上;已經存過的(內容相同)直接跳過
+# 檔名取 EE.log 的最後修改時間,也就是那一場最後一行 log 的時間,
+# 凍結的場次看檔名就知道大概幾點卡住。
+#
+# 包裝器不 exec,而是當 reaper 的父行程等它結束;收到 TERM/INT/HUP 會轉給遊戲,
+# 等遊戲收尾後再備份。gamemode-autoregister 是直接掃 reaper,不受多一層影響。
+#
+# 用法(Steam 啟動參數,放在 gamemoderun 前面):
+#   LD_PRELOAD="" VK_LOADER_LAYERS_DISABLE=... wf-eelog-bk gamemoderun mangohud %command%
+# 備份位置:~/.local/state/wf-eelog/EE-YYYYmmdd-HHMMSS.log,保留最新 WF_EELOG_KEEP(預設 20)份
+
+set -uo pipefail
+
+KEEP=${WF_EELOG_KEEP:-20}
+BK_DIR=${XDG_STATE_HOME:-$HOME/.local/state}/wf-eelog
+# Steam 啟動 Proton 遊戲時一定會帶 STEAM_COMPAT_DATA_PATH;沒帶就退回本機路徑
+COMPAT=${STEAM_COMPAT_DATA_PATH:-/mnt/games/steamapps/compatdata/230410}
+LOG=$COMPAT/pfx/drive_c/users/steamuser/AppData/Local/Warframe/EE.log
+
+backup() {
+    [[ -s $LOG ]] || return 0
+    mkdir -p "$BK_DIR" || return 0
+    local dest
+    dest=$BK_DIR/EE-$(date -r "$LOG" +%Y%m%d-%H%M%S).log
+    # 同一場已經存過(內容相同)就跳過
+    [[ -e $dest ]] && cmp -s "$LOG" "$dest" && return 0
+    cp --preserve=timestamps "$LOG" "$dest" || return 0
+    # 只留最新 KEEP 份(檔名只含數字與連字號,ls 排序安全)
+    ls -1t "$BK_DIR"/EE-*.log 2>/dev/null | tail -n +$((KEEP + 1)) | xargs -r rm -f --
+}
+
+(( $# )) || { echo "用法:wf-eelog-bk <command...>(放在 Steam 啟動參數裡包住 %command%)" >&2; exit 2; }
+
+# 啟動前:補存上一場
+backup
+
+# 背景執行時 bash 預設把 stdin 接到 /dev/null,明確轉回原本的 stdin
+"$@" <&0 &
+child=$!
+trap 'kill -TERM "$child" 2>/dev/null' TERM INT HUP
+
+# 收到訊號時 wait 會提早返回(>128),要一直等到遊戲樹真的結束
+while :; do
+    wait "$child"
+    rc=$?
+    kill -0 "$child" 2>/dev/null || break
+done
+
+# 結束後:存這一場
+backup
+exit "$rc"
