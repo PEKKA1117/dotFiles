@@ -4,13 +4,12 @@
 # 用法: switch-audio-sink.sh {c20|arctis|moonriver}
 
 # ── 裝置對應表：要改就改這裡 ──────────────────────────────
-# 三個裝置一律用關鍵字比對當下的 sink 清單,不寫死節點全名。
-# C20 的 PCI 路徑雖然固定,但 PipeWire 會在節點名尾端加流水號
-# (alsa_output.pci-0000_00_1f.3.iec958-stereo.4),每次節點重建就往上加,
-# 所以寫死全名遲早會變成 "No such entity"。只比對到 iec958 為止。
+# 三個裝置一律用關鍵字比對當下的 sink 清單。
+# C20 的節點名由 wireplumber 規則固定成 DF-C20
+# (wireplumber.conf.d/51-spdif-stable-name.conf),不會再長流水號後綴。
 # USB 裝置則是節點名可能隨韌體或插的埠改變。
 # 找不到時通知會列出現有 sink,方便對照後回來改這些 pattern。
-C20_PATTERN="pci-0000_00_1f.3.iec958"
+C20_PATTERN="DF-C20"
 ARCTIS_PATTERN="arctis"
 MOONRIVER_PATTERN="moonriver"
 
