@@ -1,0 +1,113 @@
+#!/usr/bin/python3 -I
+"""查 Proton VPN 伺服器負載(給 vpn-switch 依負載挑伺服器用)
+
+透過官方函式庫 python-proton-vpn-api-core(extra 套件)以你自己的帳號登入、抓伺服器清單,
+不連線、不碰 NetworkManager。客戶端識別(x-pm-appversion)由函式庫自己產生
+(linux-vpn-cli@<函式庫版本>),這裡不自己拼 header。
+
+登入 session 存在系統 keyring(gnome-keyring,需要 python-proton-keyring-linux)。
+只有 JSON 檔 backend 時拒絕登入:那會把 token 以明文寫進 ~/.config/Proton(/home 沒加密、還有 snapper 快照)。
+伺服器清單由函式庫快取在 ~/.cache/Proton/VPN/serverlist.json。
+
+用法:
+  proton-vpn-loads login [帳號]     互動登入(密碼 + 2FA),只需一次
+  proton-vpn-loads logout
+  proton-vpn-loads get JP-324 TW-14 ...
+      每行輸出「名稱 負載% 可用(1/0)」;找不到的伺服器輸出「名稱 - 0」
+  proton-vpn-loads get              列出全部伺服器
+"""
+
+import asyncio
+import getpass
+import sys
+
+from proton.loader import Loader
+from proton.vpn.core.session_holder import ClientTypeMetadata, SessionHolder
+
+CLIENT = ClientTypeMetadata(type="cli")
+
+
+def die(msg: str, code: int = 1):
+    print(f"proton-vpn-loads: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def require_secure_keyring():
+    # entry 的 class_name 是註冊名("json"),要看實際類別
+    backends = [e.cls.__name__ for e in Loader.get_all("keyring")]
+    if all(name == "KeyringBackendJsonFiles" for name in backends):
+        die("只有明文 JSON keyring backend;請先裝 python-proton-keyring-linux "
+            "(sudo pacman -S python-proton-keyring-linux)")
+
+
+async def login(username: str):
+    require_secure_keyring()
+    if not sys.stdin.isatty():
+        die("login 要在互動終端機裡跑(要輸入密碼與 2FA)")
+    session = SessionHolder(CLIENT).get_session_for(username)
+    if session.logged_in:
+        print(f"{username} 已登入")
+        return
+    password = getpass.getpass(f"{username} 的 Proton 密碼:")
+    result = await session.login(username, password)
+    if not result.authenticated:
+        die("帳號或密碼錯誤")
+    if result.twofa_required:
+        code = input("2FA 代碼:").strip()
+        result = await session.provide_2fa_code(code)
+        if not result.success:
+            die("2FA 代碼錯誤")
+    await session.fetch_session_data()
+    print(f"{username} 登入完成")
+
+
+async def logout():
+    session = SessionHolder(CLIENT).session
+    if session.authenticated:
+        await session.async_logout()
+    print("已登出")
+
+
+async def get(names: list[str]):
+    session = SessionHolder(CLIENT).session
+    if not session.logged_in:
+        die("尚未登入:先在終端機跑 proton-vpn-loads login", code=2)
+    if not session.loaded:
+        await session.fetch_session_data()
+    server_list = await session.fetch_server_list()
+
+    if not names:
+        for srv in sorted(server_list.logicals, key=lambda s: s.name):
+            usable = int(srv.enabled and not srv.under_maintenance)
+            print(f"{srv.name.replace('#', '-')} {srv.load} {usable}")
+        return
+
+    for name in names:
+        try:
+            srv = server_list.get_by_name(name.replace("-", "#"))
+        except Exception:  # ServerNotFoundError:設定檔對應的伺服器已下架
+            print(f"{name} - 0")
+            continue
+        usable = int(srv.enabled and not srv.under_maintenance)
+        print(f"{name} {srv.load} {usable}")
+
+
+def main():
+    args = sys.argv[1:]
+    if not args or args[0] in ("-h", "--help", "help"):
+        print(__doc__.strip())
+        return
+    cmd, rest = args[0], args[1:]
+    if cmd == "login":
+        username = rest[0] if rest else input("Proton 帳號:").strip()
+        asyncio.run(login(username))
+    elif cmd == "logout":
+        asyncio.run(logout())
+    elif cmd == "get":
+        asyncio.run(get(rest))
+    else:
+        die(f"未知指令 {cmd}")
+
+
+if __name__ == "__main__":
+    main()

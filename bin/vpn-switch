@@ -26,7 +26,8 @@
 # 用法:
 #   vpn-switch               用 fzf 挑(伺服器、城市、warp、off)
 #   vpn-switch JP-324        指定伺服器(wg-JP-324 / jp-324 也行)
-#   vpn-switch tokyo         國家或城市(jp、taichung、tw/taipei)→ 在裡面隨機挑一台
+#   vpn-switch tokyo         國家或城市(jp、taichung、tw/taipei)→ 挑負載最低的一台
+#                            (負載來自 proton-vpn-loads,沒登入就退回隨機)
 #   vpn-switch jp-3          部分符合多台 → fzf 篩選;非互動則列出候選後結束
 #   vpn-switch warp          回到 WARP
 #   vpn-switch off           關掉所有隧道(開機自動連線設定不變)
@@ -92,7 +93,7 @@ entries() {
     local loc
     printf '%-8s %s\n' warp "Cloudflare WARP" off "關閉所有隧道"
     while read -r loc; do
-        printf '%-8s %s\n' "$loc" "(隨機挑一台)"
+        printf '%-8s %s\n' "$loc" "(挑負載最低的)"
     done < <(all_locs)
     list | sed 's/^. //'
 }
@@ -181,14 +182,48 @@ pick() {
         --header="目前:$(current)" | awk '{print $1}'
 }
 
+# 在候選設定檔裡挑負載最低、沒在維護的一台(負載來自 proton-vpn-loads,官方函式庫 + 你的帳號)
+# 查不到(沒登入、API 不通)就退回隨機,並盡量避開目前這台
+pick_lowest_load() {
+    local f out name load usable best="" best_load=101 cur others=()
+    local -A path=()
+    for f in "$@"; do path[$(conf_name "$f")]=$f; done
+    if out=$(timeout 20 proton-vpn-loads get "${!path[@]}" 2>/dev/null) && [[ -n $out ]]; then
+        while read -r name load usable; do
+            [[ $usable == 1 && $load =~ ^[0-9]+$ ]] || continue
+            (( load < best_load )) && { best_load=$load; best=$name; }
+        done <<<"$out"
+    fi
+    if [[ -n $best ]]; then
+        echo "負載最低:$best(${best_load}%)" >&2
+        echo "${path[$best]}"
+        return
+    fi
+    echo "查不到負載(要先 proton-vpn-loads login?),改為隨機挑" >&2
+    cur=$(current)
+    for f in "$@"; do [[ $(conf_name "$f") != "$cur" ]] && others+=("$f"); done
+    (( ${#others[@]} )) || others=("$@")
+    printf '%s\n' "${others[@]}" | shuf -n 1
+}
+
+# 引數是不是國家 / 城市 / 國家/城市
+is_location() {
+    local want loc
+    want=$(lower <<<"$1")
+    while read -r loc; do
+        loc=$(lower <<<"$loc")
+        [[ $loc == "$want" || ${loc%%/*} == "$want" || ${loc#*/} == "$want" ]] && return 0
+    done < <(all_locs)
+    return 1
+}
+
 # 引數 → 設定檔路徑
 #   1. 伺服器名完全符合
-#   2. 國家 / 城市 / 國家/城市 完全符合 → 隨機一台(盡量避開目前這台)
+#   2. 國家 / 城市 / 國家/城市 完全符合 → 負載最低的一台
 #   3. 伺服器名部分符合
 resolve() {
-    local want f loc cur matches=()
+    local want f loc matches=()
     want=$(lower <<<"$1"); want=${want#wg-}; want=${want%.conf}
-    cur=$(current)
 
     while read -r f; do
         [[ $(conf_name "$f" | lower) == "$want" ]] && { echo "$f"; return; }
@@ -199,10 +234,7 @@ resolve() {
         [[ $loc == "$want" || ${loc%%/*} == "$want" || ${loc#*/} == "$want" ]] && matches+=("$f")
     done < <(all_confs)
     if (( ${#matches[@]} )); then
-        local others=()
-        for f in "${matches[@]}"; do [[ $(conf_name "$f") != "$cur" ]] && others+=("$f"); done
-        (( ${#others[@]} )) && matches=("${others[@]}")
-        printf '%s\n' "${matches[@]}" | shuf -n 1
+        pick_lowest_load "${matches[@]}"
         return
     fi
 
@@ -235,7 +267,12 @@ switch_to() {
         off)  down_all; echo "已關閉所有隧道" ;;
         *)
             conf=$(resolve "$1") || { refresh_waybar; exit 1; }
-            up_proton "$conf" || rc=$?
+            # 挑城市時若負載最低的就是目前這台,不必斷線重連
+            if is_location "$1" && is_active "$PROTON" && [[ $(conf_name "$conf") == "$(current)" ]]; then
+                echo "目前的 $(current) 已是 $1 負載最低的,不重連"
+            else
+                up_proton "$conf" || rc=$?
+            fi
             ;;
     esac
     refresh_waybar
