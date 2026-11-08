@@ -1,0 +1,321 @@
+#!/usr/bin/env bash
+# 在 Proton WireGuard 設定檔與 Cloudflare WARP 之間切換(NetworkManager,免 sudo)
+#
+# ── 設定檔目錄 ────────────────────────────────────────────────────────
+# ~/Documents/proton-wg-confs/<國家>/<城市>/wg-<國家>-<編號>.conf,例如 JP/Tokyo/wg-JP-324.conf
+# 新下載的設定檔照這個結構丟進去就好,不用改腳本。
+# 注意 TW/Taipei 是 Proton 的虛擬位置,實際從新加坡出去;真的在台灣的是 TW/Taichung。
+#
+# ── 做法 ──────────────────────────────────────────────────────────────
+# Proton 每個設定檔各有一把私鑰、綁一台伺服器,所以不在 NM 裡存一堆連線,
+# 只留一條叫 "proton" 的連線:切換時刪掉舊的、匯入新的設定檔、改名成 proton。
+# 介面名固定是 proton,vpn-watchdog / launch_after_vpn.sh / waybar 才不用知道目前是哪台。
+#
+# 一次只開一條全隧道:NM 會替每條 WireGuard 全隧道各加一組 fwmark/table 規則
+# (suppress_prefixlength 0 + not fwmark X lookup Y),兩條同時開會互搶預設路由。
+# 既有的繞道規則優先序都比較小,換隧道不受影響:
+#   50  fwmark 0x77             → main   Warframe P2P(~/claude/wf-bypass)
+#   60  fwmark 0x80000/0xff0000 → main   CalDAV 外部連入的回程(caldav-return-path)
+#   100 from 172.16.0.100       → main   ssh 等直接打 LAN IP 的連入
+#
+# 私鑰只在 $XDG_RUNTIME_DIR(tmpfs)停留到匯入完成,不會寫進 /home。
+# IPv6 一律關掉(同 warp):本機沒有原生 IPv6,匯入前就把設定檔裡的 v6 位址 / DNS 拿掉。
+# DNS 不動:/etc/resolv.conf 是固定的 1.1.1.1,不由 NM 管,設定檔裡的 10.2.0.1(NetShield)沒被用到。
+# 出口用 Cloudflare 的 trace 查:Proton 自己的 /vpn/location 從 Proton 隧道裡打會卡住。
+#
+# 用法:
+#   vpn-switch               用 fzf 挑(伺服器、城市、warp、off)
+#   vpn-switch JP-324        指定伺服器(wg-JP-324 / jp-324 也行)
+#   vpn-switch tokyo         國家或城市(jp、taichung、tw/taipei)→ 在裡面隨機挑一台
+#   vpn-switch jp-3          部分符合多台 → fzf 篩選;非互動則列出候選後結束
+#   vpn-switch warp          回到 WARP
+#   vpn-switch off           關掉所有隧道(開機自動連線設定不變)
+#   vpn-switch status        目前狀態與出口
+#   vpn-switch list          列出設定檔(* = 目前)
+#   vpn-switch menu          fuzzel 選單(waybar 點擊用),結果用通知顯示
+#   vpn-switch waybar        輸出 waybar custom 模組的 JSON
+
+set -euo pipefail
+
+CONF_DIR=${VPN_SWITCH_CONF_DIR:-$HOME/Documents/proton-wg-confs}
+PROTON=proton
+WARP=warp
+STATE_DIR=${XDG_STATE_HOME:-$HOME/.local/state}/vpn-switch
+RUN_DIR=${XDG_RUNTIME_DIR:-/run/user/$UID}/vpn-switch
+TRACE=https://1.1.1.1/cdn-cgi/trace
+WAYBAR_SIGNAL=10
+
+die() { echo "vpn-switch: $*" >&2; exit 1; }
+lower() { tr '[:upper:]' '[:lower:]'; }
+
+is_active() { [[ $(nmcli -g GENERAL.STATE connection show "$1" 2>/dev/null) == activated ]]; }
+exists() { nmcli -g connection.id connection show "$1" >/dev/null 2>&1; }
+
+# 設定檔名 wg-JP-324.conf → JP-324
+conf_name() { local n=${1##*/}; n=${n%.conf}; echo "${n#wg-}"; }
+# 設定檔所在的國家/城市,例如 JP/Tokyo(直接放在根目錄的顯示 -)
+conf_loc() { local d=${1%/*}; d=${d#"$CONF_DIR"}; d=${d#/}; echo "${d:--}"; }
+
+all_confs() { find "$CONF_DIR" -type f -name '*.conf' 2>/dev/null | sort -V; }
+all_locs() { all_confs | while read -r f; do conf_loc "$f"; done | grep -vx -- - | sort -u; }
+
+find_conf() {
+    local f
+    while read -r f; do
+        [[ $(conf_name "$f") == "$1" ]] && { echo "$f"; return 0; }
+    done < <(all_confs)
+    return 1
+}
+
+current() {
+    if is_active "$PROTON"; then
+        cat "$STATE_DIR/current" 2>/dev/null || echo "$PROTON"
+    elif is_active "$WARP"; then
+        echo "$WARP"
+    else
+        echo off
+    fi
+}
+
+list() {
+    local cur f name
+    cur=$(current)
+    while read -r f; do
+        name=$(conf_name "$f")
+        printf '%s %-8s %-12s %s\n' "$([[ $name == "$cur" ]] && echo '*' || echo ' ')" "$name" \
+            "$(conf_loc "$f")" "$(awk -F' *= *' '/^Endpoint/{sub(/:.*/, "", $2); print $2; exit}' "$f")"
+    done < <(all_confs)
+}
+
+# 選單項目:第一欄就是要傳給 switch_to 的引數
+entries() {
+    local loc
+    printf '%-8s %s\n' warp "Cloudflare WARP" off "關閉所有隧道"
+    while read -r loc; do
+        printf '%-8s %s\n' "$loc" "(隨機挑一台)"
+    done < <(all_locs)
+    list | sed 's/^. //'
+}
+
+# 透過指定介面查出口,結果存起來給 waybar 用
+show_exit() {
+    local iface=$1 trace ip loc colo
+    for _ in 1 2 3 4 5 6 7 8; do
+        if trace=$(curl -s -m 4 --interface "$iface" "$TRACE") && [[ $trace == *ip=* ]]; then
+            ip=$(sed -n 's/^ip=//p' <<<"$trace")
+            loc=$(sed -n 's/^loc=//p' <<<"$trace")
+            colo=$(sed -n 's/^colo=//p' <<<"$trace")
+            mkdir -p "$STATE_DIR"
+            echo "$ip $loc $colo" >"$STATE_DIR/exit"
+            echo "出口 $ip  $loc(Cloudflare $colo)"
+            return 0
+        fi
+        sleep 1
+    done
+    rm -f "$STATE_DIR/exit"
+    echo "警告:$iface 8 秒內查不到出口,隧道可能沒通(vpn-switch status 再看一次)" >&2
+    return 1
+}
+
+refresh_waybar() { pkill -RTMIN+"$WAYBAR_SIGNAL" -x waybar 2>/dev/null || true; }
+
+down_all() {
+    local c
+    for c in "$PROTON" "$WARP"; do
+        is_active "$c" && nmcli connection down "$c" >/dev/null
+    done
+    rm -f "$STATE_DIR/exit"
+    return 0
+}
+
+up_proton() {
+    local conf=$1 name tmp
+    name=$(conf_name "$conf")
+    install -d -m 700 "$RUN_DIR"
+    tmp=$RUN_DIR/$PROTON.conf
+    # 現在就展開路徑:EXIT 時 local 變數已不存在
+    trap "rm -f '$tmp'" EXIT
+    # 匯入前就把 Address / DNS 裡的 IPv6 項目拿掉,NM 才不會建出一堆 ipv6.* 設定
+    (umask 077; awk -F' *= *' '
+        /^(Address|DNS) *=/ {
+            n = split($2, a, / *, */); out = ""
+            for (i = 1; i <= n; i++) if (a[i] !~ /:/) out = out (out == "" ? "" : ", ") a[i]
+            print $1 " = " out; next
+        }
+        { print }' "$conf" >"$tmp")
+
+    down_all
+    exists "$PROTON" && nmcli connection delete "$PROTON" >/dev/null
+    # 匯入後連線名 / 介面名都取自檔名 → proton
+    nmcli connection import type wireguard file "$tmp" >/dev/null
+    rm -f "$tmp"
+    # 保險:method=disabled 不允許殘留任何 v6 位址 / DNS / 搜尋網域
+    nmcli connection modify "$PROTON" ipv6.dns "" ipv6.dns-search "" ipv6.addresses "" \
+        ipv6.method disabled connection.autoconnect yes
+    exists "$WARP" && nmcli connection modify "$WARP" connection.autoconnect no
+    # 匯入時 NM 可能已自動啟用,重新 up 讓上面的修改生效
+    nmcli connection up "$PROTON" >/dev/null
+
+    mkdir -p "$STATE_DIR"
+    echo "$name" >"$STATE_DIR/current"
+    echo "已切到 Proton $name($(conf_loc "$conf"))"
+    show_exit "$PROTON"
+}
+
+up_warp() {
+    exists "$WARP" || die "找不到 NM 連線 $WARP"
+    down_all
+    exists "$PROTON" && nmcli connection modify "$PROTON" connection.autoconnect no
+    nmcli connection modify "$WARP" connection.autoconnect yes
+    nmcli connection up "$WARP" >/dev/null
+    echo "已切到 WARP"
+    show_exit "$WARP"
+}
+
+pick() {
+    local query=${1:-}
+    # 在 $(...) 裡 stdout 是 pipe,所以看 stdin/stderr;fzf 自己畫在 /dev/tty
+    [[ -t 0 && -t 2 ]] || die "需要互動終端才能用 fzf 挑選"
+    command -v fzf >/dev/null || die "沒有 fzf"
+    entries | fzf --height=~60% --reverse --query="$query" --prompt="VPN> " \
+        --header="目前:$(current)" | awk '{print $1}'
+}
+
+# 引數 → 設定檔路徑
+#   1. 伺服器名完全符合
+#   2. 國家 / 城市 / 國家/城市 完全符合 → 隨機一台(盡量避開目前這台)
+#   3. 伺服器名部分符合
+resolve() {
+    local want f loc cur matches=()
+    want=$(lower <<<"$1"); want=${want#wg-}; want=${want%.conf}
+    cur=$(current)
+
+    while read -r f; do
+        [[ $(conf_name "$f" | lower) == "$want" ]] && { echo "$f"; return; }
+    done < <(all_confs)
+
+    while read -r f; do
+        loc=$(conf_loc "$f" | lower)
+        [[ $loc == "$want" || ${loc%%/*} == "$want" || ${loc#*/} == "$want" ]] && matches+=("$f")
+    done < <(all_confs)
+    if (( ${#matches[@]} )); then
+        local others=()
+        for f in "${matches[@]}"; do [[ $(conf_name "$f") != "$cur" ]] && others+=("$f"); done
+        (( ${#others[@]} )) && matches=("${others[@]}")
+        printf '%s\n' "${matches[@]}" | shuf -n 1
+        return
+    fi
+
+    while read -r f; do
+        [[ $(conf_name "$f" | lower) == *"$want"* ]] && matches+=("$f")
+    done < <(all_confs)
+    case ${#matches[@]} in
+        0) die "$CONF_DIR 裡沒有符合「$1」的設定檔或城市(vpn-switch list 看全部)" ;;
+        1) echo "${matches[0]}" ;;
+        *)
+            if [[ -t 0 && -t 2 ]]; then
+                local sel
+                sel=$(pick "$1") && [[ -n $sel ]] || exit 1
+                case $(lower <<<"$sel") in
+                    # fzf 清單裡也有 warp/off,這裡只處理伺服器 / 城市
+                    warp|off) die "請直接用 vpn-switch $sel" ;;
+                esac
+                resolve "$sel"
+            else
+                die "「$1」符合多個:$(for f in "${matches[@]}"; do conf_name "$f"; done | tr '\n' ' ')"
+            fi
+            ;;
+    esac
+}
+
+switch_to() {
+    local rc=0 conf
+    case $(lower <<<"$1") in
+        warp) up_warp || rc=$? ;;
+        off)  down_all; echo "已關閉所有隧道" ;;
+        *)
+            conf=$(resolve "$1") || { refresh_waybar; exit 1; }
+            up_proton "$conf" || rc=$?
+            ;;
+    esac
+    refresh_waybar
+    return "$rc"
+}
+
+# waybar custom 模組:只讀 nmcli 狀態與快取的出口,不打網路,可以頻繁跑
+waybar_json() {
+    local cur text tooltip class exit_info="" conf ip loc colo
+    cur=$(current)
+    [[ -r $STATE_DIR/exit ]] && exit_info=$(<"$STATE_DIR/exit")
+    case $cur in
+        off)
+            text="󰦞 off"; class=off; tooltip="沒有 VPN 隧道(直連)" ;;
+        warp)
+            text="󰖂 WARP"; class=warp; tooltip="Cloudflare WARP" ;;
+        *)
+            class=proton; tooltip="Proton $cur"
+            if conf=$(find_conf "$cur"); then
+                text="󰖂 ${cur%%-*} $(conf_loc "$conf" | sed 's|.*/||')"
+                tooltip+="($(conf_loc "$conf"))"
+            else
+                text="󰖂 $cur"
+            fi
+            ;;
+    esac
+    if [[ $class != off ]]; then
+        if [[ -n $exit_info ]]; then
+            read -r ip loc colo <<<"$exit_info"
+            tooltip+=$'\n'"出口 $ip  $loc(CF $colo)"
+        else
+            tooltip+=$'\n'"出口未知(右鍵重查)"; class+=" unknown"
+        fi
+    fi
+    tooltip+=$'\n\n'"左鍵:選伺服器 / 右鍵:重查出口 / 中鍵:回 WARP"
+    jq -cn --arg t "$text" --arg tt "$tooltip" --arg c "$class" \
+        '{text: $t, tooltip: $tt, class: ($c | split(" "))}'
+}
+
+# sway 開了 focus_follows_mouse:選單若開在螢幕正中央,滑鼠從 waybar 移過去途中
+# 會經過其他視窗、搶走鍵盤焦點,fuzzel 預設失焦就關閉 → 用滑鼠根本點不到。
+# 所以:貼在 waybar 正下方(滑鼠幾乎不用移)+ 失焦不關閉。
+# 失焦不關閉的副作用是點別處不會收起選單,所以再點一次 waybar 模組 = 關閉(toggle)。
+menu() {
+    local sel out rc=0 items
+    # 用 layer-shell namespace 認出自己開的那個 fuzzel
+    pkill -f -- '^fuzzel .*--namespace=vpn-switch' && exit 0
+    # fuzzel.ini 的 lines=16 放不下全部(超過的只能用方向鍵捲),所以依項目數撐開;
+    # 上限 40 行,4K 螢幕放得下,設定檔再變多就靠輸入篩選
+    items=$(entries)
+    sel=$(fuzzel --namespace=vpn-switch --dmenu --prompt "VPN> " --width 50 \
+        --lines "$(( $(wc -l <<<"$items") > 40 ? 40 : $(wc -l <<<"$items") ))" \
+        --anchor top --no-exit-on-keyboard-focus-loss \
+        --placeholder "目前:$(current)" <<<"$items" | awk '{print $1}') || exit 0
+    [[ -n $sel ]] || exit 0
+    notify-send -a vpn-switch -t 3000 "VPN" "切換到 $sel …"
+    out=$(switch_to "$sel" 2>&1) || rc=$?
+    notify-send -a vpn-switch -u "$( ((rc)) && echo critical || echo normal)" "VPN" "$out"
+    return "$rc"
+}
+
+cmd=${1:-}
+case $cmd in
+    list|ls) list ;;
+    status|st)
+        cur=$(current)
+        echo "目前:$cur"
+        case $cur in
+            off) ;;
+            warp) show_exit "$WARP" ;;
+            *) show_exit "$PROTON" ;;
+        esac
+        refresh_waybar
+        ;;
+    waybar) waybar_json ;;
+    menu) menu ;;
+    -h|--help|help) sed -n '2,/^$/{s/^# \{0,1\}//;p}' "$0" ;;
+    "")
+        sel=$(pick) && [[ -n $sel ]] || exit 1
+        switch_to "$sel"
+        ;;
+    *) switch_to "$cmd" ;;
+esac

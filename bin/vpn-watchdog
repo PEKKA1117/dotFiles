@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# VPN 隧道(NM WireGuard 連線 "proton" 或 "warp",由 vpn-switch 切換)卡死偵測,卡死就重連
+# (原名 warp-watchdog,2026-11-09 換回 Proton 時一般化)
+#
+# ── 背景 ──────────────────────────────────────────────────────────────
+# 2026-10-30 清晨 05:33 起握手再也沒成功,NM 仍顯示 activated、沒有任何日誌,
+# 所有流量(含 DNS 1.1.1.1)默默黑洞到早上。手動 down/up 立刻恢復。
+# 推測:HiNet 換 WAN IP 或路由器 UDP 轉址紀錄過時,而 keepalive 每 25 秒
+# 把那筆壞紀錄續命;重連會換新的 listen port,等於繞過它。
+#
+# ── 做法 ──────────────────────────────────────────────────────────────
+# 1. 兩條都沒啟用(vpn-switch off)、或介面被手動 `ip link set down` → 尊重使用者,不動
+# 2. 綁隧道介面打 1.1.1.1/cdn-cgi/trace,連 3 次都拿不到回應才算卡死
+#    (WireGuard 沒有「已連線」狀態,握手死掉 NM 照樣顯示 activated,只能實際打打看)
+# 3. 同時直連 enp6s0 也不通 → 是整條外網斷,重連沒用,不動
+# 4. 否則 nmcli down/up(免 sudo,同 dbd-ec2-blackhole)
+#
+# 用法:vpn-watchdog   跑一次檢查(由 vpn-watchdog.timer 定時觸發)
+
+set -u
+
+UNDERLAY=enp6s0
+TRACE=https://1.1.1.1/cdn-cgi/trace
+
+log() { echo "$*"; logger -t vpn-watchdog -- "$*"; }
+
+# 連線名 = 介面名;vpn-switch 保證同時只有一條
+CONN=
+for c in proton warp; do
+    [[ $(nmcli -g GENERAL.STATE connection show "$c" 2>/dev/null) == activated ]] && { CONN=$c; break; }
+done
+[[ -n $CONN ]] || exit 0
+IFACE=$CONN
+[[ $(cat /sys/class/net/$IFACE/operstate 2>/dev/null) == down ]] && exit 0
+
+for _ in 1 2 3; do
+    curl -s -m 5 --interface "$IFACE" "$TRACE" | grep -q '^ip=' && exit 0
+    sleep 5
+done
+
+if ! curl -s -m 5 -o /dev/null --interface "$UNDERLAY" "$TRACE"; then
+    log "$IFACE 與 $UNDERLAY 都不通,外網斷線,不重連"
+    exit 0
+fi
+
+log "$IFACE 隧道卡死($UNDERLAY 直連正常),重連 $CONN"
+nmcli connection down "$CONN" >/dev/null
+nmcli connection up "$CONN" >/dev/null || { log "重連失敗"; exit 1; }
+
+sleep 3
+if curl -s -m 5 --interface "$IFACE" "$TRACE" | grep -q '^ip='; then
+    log "重連後 $IFACE 恢復"
+else
+    log "重連後仍不通"
+    exit 1
+fi

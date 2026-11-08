@@ -87,6 +87,7 @@ tooltip label {
 #tray,
 #clock,
 #custom-playerctl,
+#custom-vpn,
 #custom-settings,
 #custom-power,
 #custom-reboot,
@@ -120,6 +121,7 @@ tooltip label {
 #tray .active:hover,
 #clock:hover,
 #custom-playerctl:hover,
+#custom-vpn:hover,
 #custom-settings:hover,
 #custom-power:hover,
 #custom-reboot:hover,
@@ -358,3 +360,8 @@ tooltip label {
   color: #ff5555;
   background: rgba(255, 85, 85, 0.1);
 }
+
+/* VPN 模組:WARP 黃、off / 出口未知 紅 */
+#custom-vpn.warp { color: #f9e2af; }
+#custom-vpn.off,
+#custom-vpn.unknown { color: #f38ba8; }

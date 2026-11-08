@@ -46,8 +46,21 @@
 //    "custom/claude-usage",
     "clock",
     "network",
+    "custom/vpn",
     "custom/playerctl"
   ],
+  // VPN 隧道狀態(~/.config/bin/vpn-switch):Proton 伺服器 / WARP / off
+  // vpn-switch 切換後會送 SIGRTMIN+10 立即更新;interval 只是保底(例如 vpn-watchdog 重連後)
+  "custom/vpn": {
+    "exec": "$HOME/.local/bin/vpn-switch waybar",
+    "return-type": "json",
+    "interval": 15,
+    "signal": 10,
+    "tooltip": true,
+    "on-click": "$HOME/.local/bin/vpn-switch menu",
+    "on-click-right": "$HOME/.local/bin/vpn-switch status",
+    "on-click-middle": "$HOME/.local/bin/vpn-switch warp"
+  },
   "custom/claude-usage": {
     "exec": "/usr/bin/claude-usage --waybar --browser chromium --browser vivaldi-snapshot",
     "return-type": "json",

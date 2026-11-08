@@ -1,0 +1,6 @@
+[Unit]
+Description=VPN 隧道(proton / warp)卡死偵測與重連
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/vpn-watchdog

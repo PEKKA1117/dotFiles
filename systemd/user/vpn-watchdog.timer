@@ -1,0 +1,11 @@
+[Unit]
+Description=凌晨 2~7 點每 10 分鐘檢查 VPN 隧道
+
+[Timer]
+# 隧道卡死都發生在無人使用的深夜(2026-10-30 那次在 05:33);白天卡住自己會發現,不必常駐輪詢
+OnCalendar=*-*-* 02..06:00/10:00
+OnCalendar=*-*-* 07:00:00
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target
