@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# gamemode 場次中,把 DXVK 的 shader 編譯執行緒搬到 E-core
+#
+# 背景:遊戲被釘在 P-core,dxvk-shader-* 也跟著繼承。開遊戲後即使快取命中,
+# 它們仍會吃滿全部 P-core 好幾分鐘,遊戲主執行緒被擠掉、GPU 閒置,E-core 卻沒事做。
+# 只搬編譯執行緒:dxvk-cs / dxvk-submit 在渲染路徑上,必須留在 P-core。
+#
+# DXVK 的執行緒在遊戲建立 device 後才出現,比 gamemode 進入時晚,所以要輪詢。
+# 每次都比對實際親和性,gamemode-autoregister 之後重設整棵樹時也能再搬回來。
+# 只呼叫 sched_setaffinity,不讀寫遊戲記憶體,也不用 ptrace。
+
+set -uo pipefail
+source "$(dirname "$0")/gamemode-cpu-topology.sh"
+
+LOG=/home/df/.local/share/gamemode-cpu.log
+POLL_SECONDS=5
+# gamemode 連續幾輪未啟用才退出,避開進入場次時的短暫空窗
+MAX_IDLE_POLLS=3
+
+detect_topology
+[[ -n "${E_CORES:-}" ]] || exit 0
+
+# 同時只留一份,gamemode 重複進入時不會疊加
+exec 9>"${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/dxvk-shader-ecore.lock"
+flock -n 9 || exit 0
+
+# 監控本身也不佔 P-core
+taskset -cp "$E_CORES" $$ &>/dev/null
+
+# E_CORES 是「12,13,...」,核心回報的是「12-19」,字串比對永遠不等;
+# 改用自己設完後核心回報的格式當比對基準
+e_list=$(awk '/^Cpus_allowed_list:/{print $2}' "/proc/$$/status")
+
+idle=0
+while (( idle < MAX_IDLE_POLLS )); do
+    if gamemode_active; then idle=0; else (( idle++ )); fi
+
+    moved=0
+    while read -r pid tid; do
+        allowed=$(awk '/^Cpus_allowed_list:/{print $2}' "/proc/$pid/task/$tid/status" 2>/dev/null)
+        [[ -n "$allowed" && "$allowed" != "$e_list" ]] || continue
+        taskset -cp "$E_CORES" "$tid" &>/dev/null && (( moved++ ))
+    done < <(ps -eLo pid=,tid=,comm= | awk '$3 ~ /^dxvk-shader-/{print $1, $2}')
+
+    (( moved == 0 )) || echo "$(date '+%F %T') [dxvk-shader-ecore] 已移轉 $moved 條執行緒到 E=$e_list" >> "$LOG"
+    sleep "$POLL_SECONDS"
+done

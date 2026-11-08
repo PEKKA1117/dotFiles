@@ -30,4 +30,7 @@ done
 # 是上百個短命行程),所以由 ecore 登記 pid、這裡遞迴遍歷整棵樹搬過去
 builds=$(retask_ecore_trees "$E_CORES")
 
+# DXVK 執行緒比 gamemode 進入時晚出現,交給背景監控處理(hook 有 10 秒逾時,不能在這裡等)
+setsid -f "$(dirname "$0")/dxvk-shader-ecore" </dev/null &>/dev/null
+
 echo "$(date '+%F %T') [start] P=$P_CORES E=$E_CORES 已移轉 $moved 個行程到 E-core(其中編譯樹 $builds 個)" >> "$LOG"
