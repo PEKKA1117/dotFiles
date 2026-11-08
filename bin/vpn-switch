@@ -20,7 +20,9 @@
 #
 # 私鑰只在 $XDG_RUNTIME_DIR(tmpfs)停留到匯入完成,不會寫進 /home。
 # IPv6 一律關掉(同 warp):本機沒有原生 IPv6,匯入前就把設定檔裡的 v6 位址 / DNS 拿掉。
-# DNS 不動:/etc/resolv.conf 是固定的 1.1.1.1,不由 NM 管,設定檔裡的 10.2.0.1(NetShield)沒被用到。
+# DNS 由 NM 依連線切換(2026-11-09 起拿掉 dns=none 與 Garuda 的全域 1.1.1.1):
+#   proton → 10.2.0.1(NetShield,設定檔帶的)  warp → 1.1.1.1  off → 1.1.1.1(Wired 連線,忽略路由器 DHCP)
+#   三條都設 dns-priority -10 / ignore-auto-dns,避免路由器發的 DNS 混進來在隧道外查詢。
 # 出口用 Cloudflare 的 trace 查:Proton 自己的 /vpn/location 從 Proton 隧道裡打會卡住。
 #
 # 用法:
@@ -199,8 +201,9 @@ up_proton() {
     nmcli connection import type wireguard file "$tmp" >/dev/null
     rm -f "$tmp"
     # 保險:method=disabled 不允許殘留任何 v6 位址 / DNS / 搜尋網域
+    # ipv4.dns 沿用設定檔的 10.2.0.1(NetShield);dns-priority 負值 = 連著時只用這組 DNS
     nmcli connection modify "$PROTON" ipv6.dns "" ipv6.dns-search "" ipv6.addresses "" \
-        ipv6.method disabled connection.autoconnect yes
+        ipv6.method disabled ipv4.dns-priority -10 connection.autoconnect yes
     exists "$WARP" && nmcli connection modify "$WARP" connection.autoconnect no
     # 匯入時 NM 可能已自動啟用,重新 up 讓上面的修改生效
     nmcli connection up "$PROTON" >/dev/null
